@@ -51,6 +51,78 @@ impl NbtEdit {
             .align_items(Alignment::Center)
             .into()
     }
+
+    fn open(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("Open")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn save(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("Save")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn apply(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("Apply")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn level(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("level.dat")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn player(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("player.dat")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn dim(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("dim")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn settings(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("Settings")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
+
+    fn help(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("Help")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
+    }
 }
 
 impl Sandbox for NbtEdit {
@@ -92,14 +164,15 @@ impl Sandbox for NbtEdit {
             .padding(4)
         ).push(Container::new(match self.screen {
             Screen::Welcome => self.welcome(),
-            Screen::Open => "open".into(),
-            Screen::Save => "save".into(),
-            Screen::Apply => "A".into(),
-            Screen::Level => "lv".into(),
-            Screen::Player => "play".into(),
-            Screen::Dim(_) => "d".into(),
-            Screen::Settings => "set".into(),
-            _ => "a".into()
+            Screen::Open => self.open(),
+            Screen::Save => self.save(),
+            Screen::Apply => self.apply(),
+            Screen::Level => self.level(),
+            Screen::Player => self.player(),
+            Screen::Dim(_) => self.dim(),
+            Screen::Settings => self.settings(),
+            Screen::Help => self.help(),
+            _ => todo!("unreachable by now"),
         }).height(Length::Fill))
         .align_items(Alignment::Center)
         .into()
