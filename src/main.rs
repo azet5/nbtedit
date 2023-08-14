@@ -1,6 +1,7 @@
 mod helpers;
 
-use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Rule, Row, TextInput, Column, Container}, Length};
+use helpers::btn_centered;
+use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container}, Length, Alignment};
 
 struct NbtEdit {
     screen: Screen,
@@ -8,7 +9,7 @@ struct NbtEdit {
 }
 
 #[derive(Debug, Clone)]
-enum Screen {
+pub enum Screen {
     Welcome,
     Open,
     Save,
@@ -22,23 +23,33 @@ enum Screen {
 }
 
 #[derive(Debug, Clone)]
-enum AppMessage {
+pub enum AppMessage {
     ChangeScreen(Screen),
 }
 
 impl NbtEdit {
     fn screen_btn(&self, screen: Screen) -> Button<'_, AppMessage> {
         match screen {
-            Screen::Open => Button::new("Open").width(60).on_press(AppMessage::ChangeScreen(Screen::Open)),
-            Screen::Save => Button::new("Save").width(60).on_press(AppMessage::ChangeScreen(Screen::Save)),
-            Screen::Apply => Button::new("Apply").width(60).on_press(AppMessage::ChangeScreen(Screen::Apply)),
-            Screen::Level => Button::new("level.dat").width(90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Level))),
-            Screen::Player => Button::new("player.dat").width(90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Player))),
-            Screen::Dim(_) => Button::new("DIM*.dat").width(90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Dim(0)))),
-            Screen::Settings => Button::new("Settings").width(90).on_press(AppMessage::ChangeScreen(Screen::Settings)),
-            Screen::Help => Button::new("?").width(20).on_press(AppMessage::ChangeScreen(Screen::Help)),
+            Screen::Open => btn_centered("Open", 60).on_press(AppMessage::ChangeScreen(Screen::Open)),
+            Screen::Save => btn_centered("Save", 60).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Save))),
+            Screen::Apply => btn_centered("Apply", 60).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Apply))),
+            Screen::Level => btn_centered("level.dat", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Level))),
+            Screen::Player => btn_centered("player.dat", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Player))),
+            Screen::Dim(_) => btn_centered("DIM*.dat", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Dim(0)))),
+            Screen::Settings => btn_centered("Settings", 90).on_press(AppMessage::ChangeScreen(Screen::Settings)),
+            Screen::Help => btn_centered("?", 30).on_press(AppMessage::ChangeScreen(Screen::Help)),
             _ => unreachable!("no buttons for other types exist"),
         }
+    }
+
+    fn welcome(&self) -> iced::Element<'_, AppMessage> {
+        Column::new()
+            .push(Space::new(Length::Fill, Length::Fill))
+            .push("Welcome!")
+            .push("To start editing, open a directory with Minecraft save.")
+            .push(Space::new(Length::Fill, Length::Fill))
+            .align_items(Alignment::Center)
+            .into()
     }
 }
 
@@ -73,21 +84,25 @@ impl Sandbox for NbtEdit {
                 .push(self.screen_btn(Screen::Level))
                 .push(self.screen_btn(Screen::Player))
                 .push(self.screen_btn(Screen::Dim(0)))
-            )
-            .push(Space::new(Length::Fill, Length::Shrink))
-            .push(self.screen_btn(Screen::Settings))
-            .spacing(8).padding(8).height(Length::Shrink)
+            ).push(Space::new(Length::Fill, Length::Shrink))
+            .push(Row::new()
+                .push(self.screen_btn(Screen::Settings))
+                .push(self.screen_btn(Screen::Help))
+            ).spacing(4)
+            .padding(4)
         ).push(Container::new(match self.screen {
-            Screen::Welcome => "Welcome!",
-            Screen::Open => "open",
-            Screen::Save => "save",
-            Screen::Apply => "A",
-            Screen::Level => "lv",
-            Screen::Player => "play",
-            Screen::Dim(_) => "d",
-            Screen::Settings => "set",
-            _ => "a"
-        }).height(Length::Fill)).into()
+            Screen::Welcome => self.welcome(),
+            Screen::Open => "open".into(),
+            Screen::Save => "save".into(),
+            Screen::Apply => "A".into(),
+            Screen::Level => "lv".into(),
+            Screen::Player => "play".into(),
+            Screen::Dim(_) => "d".into(),
+            Screen::Settings => "set".into(),
+            _ => "a".into()
+        }).height(Length::Fill))
+        .align_items(Alignment::Center)
+        .into()
     }
 }
 
