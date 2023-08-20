@@ -1,4 +1,5 @@
 mod helpers;
+mod nbt;
 
 use helpers::{btn_centered, default_paths, list_dir};
 use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable}, Length, Alignment};
