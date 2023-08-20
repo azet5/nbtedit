@@ -151,7 +151,10 @@ impl Sandbox for NbtEdit {
         match message {
             AppMessage::ChangeScreen(s) => self.screen = s,
             AppMessage::ChangeOpenPath(p) => self.path = p,
-            AppMessage::OpenDirectory(d) => self.directory = Some(d),
+            AppMessage::OpenDirectory(d) => {
+                self.directory = Some(d);
+                self.screen = Screen::Level;
+            },
         }
     }
 
