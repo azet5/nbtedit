@@ -1,10 +1,11 @@
 mod helpers;
 
-use helpers::btn_centered;
-use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container}, Length, Alignment};
+use helpers::{btn_centered, default_paths, list_dir};
+use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable}, Length, Alignment};
 
 struct NbtEdit {
     screen: Screen,
+    path: String,
     directory: Option<String>
 }
 
@@ -25,6 +26,8 @@ pub enum Screen {
 #[derive(Debug, Clone)]
 pub enum AppMessage {
     ChangeScreen(Screen),
+    ChangeOpenPath(String),
+    OpenDirectory(String),
 }
 
 impl NbtEdit {
@@ -54,9 +57,13 @@ impl NbtEdit {
 
     fn open(&self) -> iced::Element<'_, AppMessage> {
         Column::new()
-            .push(Space::new(Length::Fill, Length::Fill))
-            .push("Open")
-            .push(Space::new(Length::Fill, Length::Fill))
+            .push(Row::new()
+                .push(Scrollable::new(default_paths()))
+                .push(Scrollable::new(list_dir(&self.path)).width(Length::Fill))
+            )
+            .height(Length::Fill)
+            .spacing(4)
+            .padding(4)
             .align_items(Alignment::Center)
             .into()
     }
@@ -131,6 +138,7 @@ impl Sandbox for NbtEdit {
     fn new() -> Self {
         NbtEdit {
             screen: Screen::Welcome,
+            path: "/home".to_string(),
             directory: None,
         }
     }
@@ -142,6 +150,8 @@ impl Sandbox for NbtEdit {
     fn update(&mut self, message: Self::Message) {
         match message {
             AppMessage::ChangeScreen(s) => self.screen = s,
+            AppMessage::ChangeOpenPath(p) => self.path = p,
+            AppMessage::OpenDirectory(d) => self.directory = Some(d),
         }
     }
 
