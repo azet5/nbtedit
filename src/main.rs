@@ -1,8 +1,10 @@
 mod helpers;
 mod nbt;
+mod widgets;
 
 use helpers::{btn_centered, default_paths, list_dir};
 use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable}, Length, Alignment};
+use widgets::tree::TreeNode;
 
 struct NbtEdit {
     screen: Screen,
@@ -90,7 +92,32 @@ impl NbtEdit {
     fn level(&self) -> iced::Element<'_, AppMessage> {
         Column::new()
             .push(Space::new(Length::Fill, Length::Fill))
-            .push("level.dat")
+            .push(Scrollable::new(iced::widget::column![
+                TreeNode { children: vec![
+                    TreeNode {
+                        children: Vec::new(),
+                        icon: widgets::WidgetIcon::None,
+                        text: String::from("i'm inside!"),
+                        expanded: false,
+                    },
+                ],
+                    icon: widgets::WidgetIcon::None,
+                    text: String::from("element 1"),
+                    expanded: false,
+                },
+                TreeNode {
+                    children: Vec::new(),
+                    icon: widgets::WidgetIcon::None,
+                    text: String::from("element 2"),
+                    expanded: false,
+                },
+                TreeNode {
+                    children: Vec::new(),
+                    icon: widgets::WidgetIcon::None,
+                    text: String::from("element 3"),
+                    expanded: false,
+                },
+            ]))
             .push(Space::new(Length::Fill, Length::Fill))
             .align_items(Alignment::Center)
             .into()
