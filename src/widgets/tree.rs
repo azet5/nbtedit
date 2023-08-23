@@ -38,15 +38,27 @@ impl<Message> Component<Message, iced::Renderer> for TreeNode {
 
         if !self.expanded {
             column = column.push(Row::new()
-                .push(Button::new("+").on_press(TreeMessage::NodeExpandChanged(true)))
+                .push(Button::new("+").on_press_maybe(if self.children.len() > 0 {
+                    Some(TreeMessage::NodeExpandChanged(true))
+                } else {
+                    None
+                }))
                 .push(Button::new(self.text.as_str())));
         } else {
             column = column.push(Row::new()
-                .push(Button::new("-").on_press(TreeMessage::NodeExpandChanged(false)))
+                .push(Button::new("-").on_press_maybe(if self.children.len() > 0 {
+                    Some(TreeMessage::NodeExpandChanged(false))
+                } else {
+                    None
+                }))
                 .push(Button::new(self.text.as_str())));
             for child in &self.children {
                 column = column.push(Row::new()
-                    .push(Button::new("+").on_press(TreeMessage::NodeExpandChanged(true)))
+                    .push(Button::new("+").on_press_maybe(if child.children.len() > 0 {
+                        Some(TreeMessage::NodeExpandChanged(true))
+                    } else {
+                        None
+                    }))
                     .push(Button::new(child.text.as_str())));
             }
         }
