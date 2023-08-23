@@ -33,6 +33,7 @@ pub fn default_paths<'a>() -> Column<'a, AppMessage> {
             } else {
                 "~/.local/share".to_string()
             }, "share"))
+            .padding(4).spacing(4)
     }
     #[cfg(target_os = "windows")]
     {
@@ -59,7 +60,7 @@ fn get_owned_name(entry: DirEntry) -> (String, DirEntry) {
 }
 
 pub fn list_dir<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::path::Path>) -> Column<'a, AppMessage> {
-    let mut list = Column::new();
+    let mut list = Column::new().padding(4).spacing(4);
     if path.as_ref() != Path::new("/") {
         list = list.push(btn_to_path(path.as_ref().parent().unwrap().to_str().unwrap(), "..").width(Length::Fill))
     }
