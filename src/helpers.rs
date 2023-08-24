@@ -1,4 +1,4 @@
-use std::{borrow::Cow, path::Path, fs::DirEntry, ffi::OsString};
+use std::{borrow::Cow, path::Path, ffi::OsString};
 
 use iced::{widget::{Button, Text, Column}, alignment::Horizontal, Length};
 
@@ -21,6 +21,10 @@ pub fn btn_centered<'a>(text: impl Into<Cow<'a, str>>, width: impl Into<Length>)
 
 fn btn_to_path<'a>(path: impl Into<String>, label: impl Into<Cow<'a, str>>) -> Button<'a, AppMessage> {
     btn_centered(label, 100).on_press(AppMessage::ChangeOpenPath(path.into()))
+}
+
+fn btn_to_save<'a>(path: impl Into<String>, label: impl Into<Cow<'a, str>>) -> Button<'a, AppMessage> {
+    Button::new(Text::new(label)).on_press(AppMessage::OpenDirectory(path.into()))
 }
 
 pub fn default_paths<'a>() -> Column<'a, AppMessage> {
@@ -52,37 +56,47 @@ fn is_mc_save(path: &Path) -> bool {
     }
 }
 
-// obscure workaround which doesn't make temporary value,
-// because i don't know rust
-// TODO: delete this
-fn get_owned_name(entry: DirEntry) -> (String, DirEntry) {
-    (entry.file_name().to_str().unwrap().to_owned(), entry)
+fn list_dir(path: &Path) -> Result<Vec<(String, String)>, String> {
+    match std::fs::read_dir(path) {
+        Ok(dir) => {
+            let mut data = Vec::new();
+            for i in dir {
+                match i {
+                    Ok(dir) => {
+                        if dir.file_type().unwrap().is_dir() {
+                            data.push((dir.file_name().to_str().unwrap().to_string(), dir.path().to_str().unwrap().to_string()));
+                        }
+                    },
+                    Err(e) => return Err(e.to_string()),
+                }
+            }
+
+            data.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
+
+            Ok(data)
+        },
+        Err(e) => Err(e.to_string()),
+    }
 }
 
-pub fn list_dir<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::path::Path>) -> Column<'a, AppMessage> {
+pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::path::Path>) -> Column<'a, AppMessage> {
     let mut list = Column::new().padding(4).spacing(4);
     if path.as_ref() != Path::new("/") {
         list = list.push(btn_to_path(path.as_ref().parent().unwrap().to_str().unwrap(), "..").width(Length::Fill))
     }
-
-    match std::fs::read_dir(path) {
-        Ok(t) => {
-            for i in t {
-                if let Ok(s) = i {
-                    if s.file_type().unwrap().is_dir() {
-                        let path = s.path();
-                        if is_mc_save(&s.path()) {
-                            list = list.push(Button::new(Text::new(get_owned_name(s).0)).on_press(AppMessage::OpenDirectory(path.to_str().unwrap().to_string())).width(Length::Fill).style(iced::theme::Button::Positive));
-                        } else {
-                            list = list.push(btn_to_path(path.to_str().unwrap(), get_owned_name(s).0).width(Length::Fill));
-                        }
-                    }
+    match list_dir(path.as_ref()) {
+        Ok(data) => {
+            for entry in data {
+                if is_mc_save(&Path::new(&entry.1)) {
+                    list = list.push(btn_to_save(entry.1, entry.0).width(Length::Fill).style(iced::theme::Button::Positive));
+                } else {
+                    list = list.push(btn_to_path(entry.1, entry.0).width(Length::Fill));
                 }
             }
         },
         Err(_) => {
-            list = list.push("cannot open");
-        },
+            list = list.push("Cannot open");
+        }
     }
 
     return list;

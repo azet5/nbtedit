@@ -2,7 +2,7 @@ mod helpers;
 mod nbt;
 mod widgets;
 
-use helpers::{btn_centered, default_paths, list_dir};
+use helpers::{btn_centered, default_paths, dir_buttons};
 use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable}, Length, Alignment};
 use widgets::tree::TreeNode;
 
@@ -62,7 +62,7 @@ impl NbtEdit {
         Column::new()
             .push(Row::new()
                 .push(Scrollable::new(default_paths()))
-                .push(Scrollable::new(list_dir(&self.path)).width(Length::Fill))
+                .push(Scrollable::new(dir_buttons(&self.path)).width(Length::Fill))
             )
             .height(Length::Fill)
             .spacing(4)
