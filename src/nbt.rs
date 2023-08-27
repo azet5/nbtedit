@@ -1,4 +1,6 @@
-use std::{path::Path, slice::Iter};
+use std::{path::Path, slice::Iter, fs::File, io::Read};
+
+use flate2::GzBuilder;
 
 pub enum TagType {
     End,
@@ -29,7 +31,7 @@ pub enum ParseError {
     InvalidTagType,
     InvalidPayload,
     InvalidRootTag,
-    IOError,
+    IOError(String),
 }
 
 struct ParserData<'a> {
@@ -251,11 +253,17 @@ fn parse(data: &mut ParserData) -> Result<NbtFile, ParseError> {
 
 impl NbtFile {
     pub fn open(path: impl AsRef<Path>) -> Result<NbtFile, ParseError> {
-        match std::fs::read(path.as_ref()) {
-            Ok(data) => {
-                parse(&mut ParserData::from(&data))
+        match File::open(path) {
+            Ok(file) => {
+                let mut stream = GzBuilder::new()
+                    .read(file, Default::default());
+                let mut buf = Vec::new();
+                match stream.read_to_end(&mut buf) {
+                    Ok(_) => parse(&mut ParserData::from(&buf)),
+                    Err(e) => Err(ParseError::IOError(e.to_string())),
+                }
             },
-            Err(_) => Err(ParseError::IOError),
+            Err(e) => Err(ParseError::IOError(e.to_string())),
         }
     }
 }
