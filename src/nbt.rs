@@ -1,6 +1,6 @@
 use std::{path::Path, slice::Iter, fs::File, io::Read};
 
-use flate2::GzBuilder;
+use flate2::read::GzDecoder;
 
 pub enum TagType {
     End,
@@ -50,7 +50,7 @@ impl<'a> ParserData<'a> {
     pub fn advance(&mut self) -> Result<u8, ParseError> {
         match self.bytes.next() {
             Some(t) => {
-                print!("{}", *t);
+                eprintln!("{}", t);
                 Ok(*t)
             },
             None => Err(ParseError::EndOfBuffer),
@@ -119,7 +119,7 @@ fn read_double(data: &mut ParserData) -> Result<TagType, ParseError> {
 }
 
 fn read_byte_array(data: &mut ParserData) -> Result<TagType, ParseError> {
-    let length = data.advance()?;
+    let length = i32::from_be_bytes([data.advance()?, data.advance()?, data.advance()?, data.advance()?]);
     let mut bytes = Vec::with_capacity(length as usize);
     for _ in 0..length {
         bytes.push(data.advance()? as i8);
@@ -133,7 +133,7 @@ fn read_string(data: &mut ParserData) -> Result<TagType, ParseError> {
 }
 
 fn read_int_array(data: &mut ParserData) -> Result<TagType, ParseError> {
-    let length = data.advance()?;
+    let length = i32::from_be_bytes([data.advance()?, data.advance()?, data.advance()?, data.advance()?]);
     let mut array = Vec::with_capacity(length as usize * 4);
     for _ in 0..length {
         array.push(i32::from_be_bytes([data.advance()?, data.advance()?, data.advance()?, data.advance()?]));
@@ -143,7 +143,7 @@ fn read_int_array(data: &mut ParserData) -> Result<TagType, ParseError> {
 }
 
 fn read_long_array(data: &mut ParserData) -> Result<TagType, ParseError> {
-    let length = data.advance()?;
+    let length = i32::from_be_bytes([data.advance()?, data.advance()?, data.advance()?, data.advance()?]);
     let mut array = Vec::with_capacity(length as usize * 8);
     for _ in 0..length {
         array.push(i64::from_be_bytes([data.advance()?, data.advance()?, data.advance()?, data.advance()?, data.advance()?, data.advance()?, data.advance()?, data.advance()?]));
@@ -154,7 +154,7 @@ fn read_long_array(data: &mut ParserData) -> Result<TagType, ParseError> {
 
 fn read_list(data: &mut ParserData) -> Result<TagType, ParseError> {
     let tag_type = data.advance()?;
-    let length = data.advance()?;
+    let length = i32::from_be_bytes([data.advance()?, data.advance()?, data.advance()?, data.advance()?]);
     let mut list = Vec::with_capacity(length as usize);
     
     for _ in 0..length {
@@ -180,6 +180,7 @@ fn read_list(data: &mut ParserData) -> Result<TagType, ParseError> {
 }
 
 fn read_compound(data: &mut ParserData) -> Result<TagType, ParseError> {
+    data.level += 1;
     let mut tags = Vec::new();
     loop {
         match get_type(data)? {
@@ -205,11 +206,11 @@ fn read_compound(data: &mut ParserData) -> Result<TagType, ParseError> {
             }),
             0x05 => tags.push(Tag {
                 name: Some(read_utf8_string(data)?),
-                tag: read_long(data)?,
+                tag: read_float(data)?,
             }),
             0x06 => tags.push(Tag {
                 name: Some(read_utf8_string(data)?),
-                tag: read_long(data)?,
+                tag: read_double(data)?,
             }),
             0x07 => tags.push(Tag {
                 name: Some(read_utf8_string(data)?),
@@ -255,11 +256,12 @@ impl NbtFile {
     pub fn open(path: impl AsRef<Path>) -> Result<NbtFile, ParseError> {
         match File::open(path) {
             Ok(file) => {
-                let mut stream = GzBuilder::new()
-                    .read(file, Default::default());
                 let mut buf = Vec::new();
-                match stream.read_to_end(&mut buf) {
-                    Ok(_) => parse(&mut ParserData::from(&buf)),
+                match GzDecoder::new(file).read_to_end(&mut buf) {
+                    Ok(_) => {
+                        eprintln!("{:?}", buf);
+                        parse(&mut ParserData::from(&buf))
+                    },
                     Err(e) => Err(ParseError::IOError(e.to_string())),
                 }
             },

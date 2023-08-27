@@ -4,12 +4,14 @@ mod widgets;
 
 use helpers::{btn_centered, default_paths, dir_buttons};
 use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable}, Length, Alignment};
+use nbt::NbtFile;
 use widgets::tree::TreeNode;
 
 struct NbtEdit {
     screen: Screen,
     path: String,
-    directory: Option<String>
+    directory: Option<String>,
+    level_dat: Option<NbtFile>,
 }
 
 #[derive(Debug, Clone)]
@@ -168,6 +170,7 @@ impl Sandbox for NbtEdit {
             screen: Screen::Welcome,
             path: "/home".to_string(),
             directory: None,
+            level_dat: None,
         }
     }
 
@@ -180,8 +183,10 @@ impl Sandbox for NbtEdit {
             AppMessage::ChangeScreen(s) => self.screen = s,
             AppMessage::ChangeOpenPath(p) => self.path = p,
             AppMessage::OpenDirectory(d) => {
+                let path = d.clone();
                 self.directory = Some(d);
                 self.screen = Screen::Level;
+                self.level_dat = Some(NbtFile::open(format!("{}/level.dat", path)).unwrap());
             },
         }
     }
