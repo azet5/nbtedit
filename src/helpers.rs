@@ -1,8 +1,8 @@
 use std::{borrow::Cow, path::Path, ffi::OsString};
 
-use iced::{widget::{Button, Text, Column}, alignment::Horizontal, Length};
+use iced::{widget::{Button, Text, Column, Row}, alignment::Horizontal, Length, Padding};
 
-use crate::{AppMessage, nbt::{NbtFile, TagType, Tag}, widgets::tree::TreeNode};
+use crate::{AppMessage, nbt::{NbtFile, TagType, Tag}};
 
 #[macro_export]
 macro_rules! is_dir {
@@ -102,30 +102,31 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::
     return list;
 }
 
-pub fn tree_child<'a>(tag: &'a Tag) -> TreeNode<'a, TagType> {
-    match tag.get_tag() {
-        t @ TagType::Compound(tags) => {
-            let mut children = Vec::new();
-            for t in tags {
-                children.push(tree_child(t));
-            }
-
-            TreeNode {
-                children,
-                tag: t,
-                text: tag.get_name().clone().unwrap_or(String::from("(empty)")),
-                expanded: false,
-            }
-        },
-        t => TreeNode {
-            children: Vec::new(),
-            tag: t,
-            text: tag.get_name().clone().unwrap_or(String::from("(empty)")),
-            expanded: false,
-        },
-    }
+fn tree_btn<'a>(name: impl Into<&'a str>) -> Row<'a, AppMessage> {
+    Row::new()
+        // .push(Button::new("+"))
+        .push(Button::new(name.into()))
 }
 
-pub fn nbt_tree<'a>(data: &'a NbtFile) -> TreeNode<'a, TagType> {
-    tree_child(data.get_tag())
+fn tree_child<'a>(tag: &'a Tag) -> Column<'a, AppMessage> {
+    let mut column = Column::new().padding([0, 0, 0, 16]);
+    match tag.get_tag() {
+        TagType::Compound(tags) => {
+            let name = tag.get_name().as_deref();
+            column = column.push(tree_btn(name.unwrap_or("(empty)")));
+            for t in tags {
+                column = column.push(tree_child(t));
+            }
+        },
+        t => {
+            let name = tag.get_name().as_deref();
+            column = column.push(tree_btn(name.unwrap_or("(empty)")));
+        },
+    }
+
+    column
+}
+
+pub fn nbt_tree<'a>(data: &'a NbtFile) -> Column<'a, AppMessage> {
+    Column::new().push(tree_child(data.get_tag()))
 }
