@@ -1,21 +1,19 @@
 use iced::{Element, widget::{Button, Column, Component, component, Row}, Renderer};
 
-use super::WidgetIcon;
-
 #[derive(Debug, Clone)]
 pub enum TreeMessage {
     NodeExpandChanged(bool),
     NodeSelected,
 }
 
-pub struct TreeNode {
-    pub children: Vec<TreeNode>,
-    pub icon: WidgetIcon,
+pub struct TreeNode<'a, T> {
+    pub children: Vec<TreeNode<'a, T>>,
+    pub tag: &'a T,
     pub text: String,
     pub expanded: bool,
 }
 
-impl<Message> Component<Message, iced::Renderer> for TreeNode {
+impl<Message, T> Component<Message, iced::Renderer> for TreeNode<'_, T> {
     type Event = TreeMessage;
     type State = ();
 
@@ -44,9 +42,10 @@ impl<Message> Component<Message, iced::Renderer> for TreeNode {
                     None
                 }))
                 .push(Button::new(self.text.as_str())));
+            eprintln!("{}", self.expanded);
         } else {
             column = column.push(Row::new()
-                .push(Button::new("-").on_press_maybe(if self.children.len() > 0 {
+            .push(Button::new("-").on_press_maybe(if self.children.len() > 0 {
                     Some(TreeMessage::NodeExpandChanged(false))
                 } else {
                     None
@@ -61,14 +60,15 @@ impl<Message> Component<Message, iced::Renderer> for TreeNode {
                     }))
                     .push(Button::new(child.text.as_str())));
             }
+            eprintln!("{}", self.expanded);
         }
 
         column.into()
     }
 }
 
-impl<'a, Message: 'a> From<TreeNode> for Element<'a, Message, Renderer> {
-    fn from(value: TreeNode) -> Self {
+impl<'a, Message: 'a, T> From<TreeNode<'a, T>> for Element<'a, Message, Renderer> {
+    fn from(value: TreeNode<'a, T>) -> Self {
         component(value)
     }
 }

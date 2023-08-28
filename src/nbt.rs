@@ -23,7 +23,23 @@ pub struct Tag {
     tag: TagType,
 }
 
+impl Tag {
+    pub fn get_name(&self) -> &Option<String> {
+        &self.name
+    }
+
+    pub fn get_tag(&self) -> &TagType {
+        &self.tag
+    }
+}
+
 pub struct NbtFile(Tag);
+
+impl NbtFile {
+    pub fn get_tag(&self) -> &Tag {
+        &self.0
+    }
+}
 
 #[derive(Debug)]
 pub enum ParseError {
