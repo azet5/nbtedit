@@ -1,7 +1,11 @@
 use std::{path::Path, slice::Iter, fs::File, io::Read};
 
 use flate2::read::GzDecoder;
+use iced::widget::{Column, Row, Button};
 
+use crate::AppMessage;
+
+#[derive(Debug)]
 pub enum TagType {
     End,
     Byte(i8),
@@ -18,24 +22,85 @@ pub enum TagType {
     LongArray(Vec<i64>),
 }
 
+#[derive(Debug, Clone)]
+pub enum TagMessage {
+    ExpandTag(bool),
+}
+
+#[derive(Debug)]
 pub struct Tag {
+    id: usize,
     name: Option<String>,
     tag: TagType,
+    expanded: bool,
+}
+
+impl Default for Tag {
+    fn default() -> Self {
+        Self {
+            id: 0,
+            name: None,
+            tag: TagType::End,
+            expanded: false,
+        }
+    }
 }
 
 impl Tag {
-    pub fn get_name(&self) -> &Option<String> {
-        &self.name
+    pub fn find(&mut self, id: usize) -> Option<&mut Self> {
+        if self.id == id {
+            return Some(self);
+        }
+
+        if let TagType::Compound(tags) = &mut self.tag {
+            for tag in tags {
+                if let Some(s) = tag.find(id) {
+                    return Some(s);
+                }
+            }
+        }
+
+        None
     }
 
-    pub fn get_tag(&self) -> &TagType {
-        &self.tag
+    pub fn update(&mut self, message: TagMessage) {
+        match message {
+            TagMessage::ExpandTag(expanded) => self.expanded = expanded,
+        }
+    }
+
+    pub fn view(&self) -> Column<'_, AppMessage> {
+        let mut column = Column::new();
+        column = column.push(Row::new()
+            .push(Button::new(if self.expanded { "-" } else { "+" })
+                .on_press_maybe(if let TagType::Compound(_) = self.tag {
+                    Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded)))
+                } else {
+                    None
+                })
+            )
+            .push(Button::new(self.name.as_ref().unwrap().as_str()))
+        );
+
+        if let TagType::Compound(tags) = &self.tag {
+            if self.expanded {
+                for tag in tags {
+                    column = column.push(tag.view());
+                }
+            }
+        }
+
+        column
     }
 }
 
 pub struct NbtFile(Tag);
 
 impl NbtFile {
+    pub fn get_mut_tag(&mut self) -> &mut Tag {
+        &mut self.0
+    }
+
     pub fn get_tag(&self) -> &Tag {
         &self.0
     }
@@ -52,23 +117,20 @@ pub enum ParseError {
 
 struct ParserData<'a> {
     bytes: Iter<'a, u8>,
-    level: i8,
+    max_id: usize,
 }
 
 impl<'a> ParserData<'a> {
     pub fn from(bytes: &'a Vec<u8>) -> Self {
         Self {
             bytes: bytes.iter(),
-            level: 0,
+            max_id: 0,
         }
     }
 
     pub fn advance(&mut self) -> Result<u8, ParseError> {
         match self.bytes.next() {
-            Some(t) => {
-                eprintln!("{}", t);
-                Ok(*t)
-            },
+            Some(t) => Ok(*t),
             None => Err(ParseError::EndOfBuffer),
         }
     }
@@ -196,61 +258,85 @@ fn read_list(data: &mut ParserData) -> Result<TagType, ParseError> {
 }
 
 fn read_compound(data: &mut ParserData) -> Result<TagType, ParseError> {
-    data.level += 1;
     let mut tags = Vec::new();
     loop {
+        data.max_id += 1;
+        eprintln!("{}", data.max_id);
         match get_type(data)? {
             0x00 => {
-                data.level -= 1;
                 return Ok(TagType::Compound(tags));
             },
             0x01 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_byte(data)?,
+                ..Default::default()
             }),
             0x02 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_short(data)?,
+                ..Default::default()
             }),
             0x03 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_int(data)?,
+                ..Default::default()
             }),
             0x04 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_long(data)?,
+                ..Default::default()
             }),
             0x05 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_float(data)?,
+                ..Default::default()
             }),
             0x06 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_double(data)?,
+                ..Default::default()
             }),
             0x07 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_byte_array(data)?,
+                ..Default::default()
             }),
             0x08 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_string(data)?,
+                ..Default::default()
             }),
             0x09 => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_list(data)?,
+                ..Default::default()
             }),
             0x0a => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_compound(data)?,
+                ..Default::default()
             }),
             0x0b => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_int_array(data)?,
+                ..Default::default()
             }),
             0x0c => tags.push(Tag {
+                id: data.max_id,
                 name: Some(read_utf8_string(data)?),
                 tag: read_long_array(data)?,
+                ..Default::default()
             }),
             x => unreachable!("this tag type does not exist: {}", x),
         }
@@ -262,6 +348,7 @@ fn parse(data: &mut ParserData) -> Result<NbtFile, ParseError> {
         Ok(NbtFile(Tag {
             name: Some(read_utf8_string(data)?),
             tag: read_compound(data)?,
+            ..Default::default()
         }))
     } else {
         Err(ParseError::InvalidRootTag)
@@ -274,10 +361,7 @@ impl NbtFile {
             Ok(file) => {
                 let mut buf = Vec::new();
                 match GzDecoder::new(file).read_to_end(&mut buf) {
-                    Ok(_) => {
-                        eprintln!("{:?}", buf);
-                        parse(&mut ParserData::from(&buf))
-                    },
+                    Ok(_) => parse(&mut ParserData::from(&buf)),
                     Err(e) => Err(ParseError::IOError(e.to_string())),
                 }
             },

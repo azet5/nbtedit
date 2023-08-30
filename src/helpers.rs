@@ -1,8 +1,8 @@
 use std::{borrow::Cow, path::Path, ffi::OsString};
 
-use iced::{widget::{Button, Text, Column, Row}, alignment::Horizontal, Length, Padding};
+use iced::{widget::{Button, Text, Column}, alignment::Horizontal, Length};
 
-use crate::{AppMessage, nbt::{NbtFile, TagType, Tag}};
+use crate::AppMessage;
 
 #[macro_export]
 macro_rules! is_dir {
@@ -100,33 +100,4 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::
     }
 
     return list;
-}
-
-fn tree_btn<'a>(name: impl Into<&'a str>) -> Row<'a, AppMessage> {
-    Row::new()
-        // .push(Button::new("+"))
-        .push(Button::new(name.into()))
-}
-
-fn tree_child<'a>(tag: &'a Tag) -> Column<'a, AppMessage> {
-    let mut column = Column::new().padding([0, 0, 0, 16]);
-    match tag.get_tag() {
-        TagType::Compound(tags) => {
-            let name = tag.get_name().as_deref();
-            column = column.push(tree_btn(name.unwrap_or("(empty)")));
-            for t in tags {
-                column = column.push(tree_child(t));
-            }
-        },
-        t => {
-            let name = tag.get_name().as_deref();
-            column = column.push(tree_btn(name.unwrap_or("(empty)")));
-        },
-    }
-
-    column
-}
-
-pub fn nbt_tree<'a>(data: &'a NbtFile) -> Column<'a, AppMessage> {
-    Column::new().push(tree_child(data.get_tag()))
 }

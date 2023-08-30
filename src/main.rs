@@ -1,9 +1,9 @@
 mod helpers;
 mod nbt;
 
-use helpers::{btn_centered, default_paths, dir_buttons, nbt_tree};
+use helpers::{btn_centered, default_paths, dir_buttons};
 use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable}, Length, Alignment};
-use nbt::NbtFile;
+use nbt::{NbtFile, TagMessage};
 
 struct NbtEdit {
     screen: Screen,
@@ -20,7 +20,6 @@ pub enum Screen {
     Apply,
     Level,
     Player,
-    Dim(i32),
     Generic,
     Settings,
     Help,
@@ -31,17 +30,17 @@ pub enum AppMessage {
     ChangeScreen(Screen),
     ChangeOpenPath(String),
     OpenDirectory(String),
+    TagEvent(usize, TagMessage),
 }
 
 impl NbtEdit {
     fn screen_btn(&self, screen: Screen) -> Button<'_, AppMessage> {
         match screen {
             Screen::Open => btn_centered("Open", 60).on_press(AppMessage::ChangeScreen(Screen::Open)),
-            Screen::Save => btn_centered("Save", 60).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Save))),
+            Screen::Save => btn_centered("Save", 60),
             Screen::Apply => btn_centered("Apply", 60).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Apply))),
             Screen::Level => btn_centered("level.dat", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Level))),
-            Screen::Player => btn_centered("player.dat", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Player))),
-            Screen::Dim(_) => btn_centered("DIM*.dat", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Dim(0)))),
+            Screen::Player => btn_centered("playerdata", 90).on_press_maybe(is_dir!(self, AppMessage::ChangeScreen(Screen::Player))),
             Screen::Settings => btn_centered("Settings", 90).on_press(AppMessage::ChangeScreen(Screen::Settings)),
             Screen::Help => btn_centered("?", 30).on_press(AppMessage::ChangeScreen(Screen::Help)),
             _ => unreachable!("no buttons for other types exist"),
@@ -91,8 +90,7 @@ impl NbtEdit {
 
     fn level(&self) -> iced::Element<'_, AppMessage> {
         Column::new()
-            .push(Space::new(Length::Fill, Length::Fill))
-            .push(Scrollable::new(Column::new().push(nbt_tree(self.level_dat.as_ref().unwrap()))))
+            .push(Scrollable::new(self.level_dat.as_ref().unwrap().get_tag().view()))
             .push(Space::new(Length::Fill, Length::Fill))
             .align_items(Alignment::Center)
             .into()
@@ -102,15 +100,6 @@ impl NbtEdit {
         Column::new()
             .push(Space::new(Length::Fill, Length::Fill))
             .push("player.dat")
-            .push(Space::new(Length::Fill, Length::Fill))
-            .align_items(Alignment::Center)
-            .into()
-    }
-
-    fn dim(&self) -> iced::Element<'_, AppMessage> {
-        Column::new()
-            .push(Space::new(Length::Fill, Length::Fill))
-            .push("dim")
             .push(Space::new(Length::Fill, Length::Fill))
             .align_items(Alignment::Center)
             .into()
@@ -161,6 +150,7 @@ impl Sandbox for NbtEdit {
                 self.screen = Screen::Level;
                 self.level_dat = Some(NbtFile::open(format!("{}/level.dat", path)).unwrap());
             },
+            AppMessage::TagEvent(id, msg) => self.level_dat.as_mut().unwrap().get_mut_tag().find(id).unwrap().update(msg),
         }
     }
 
@@ -174,7 +164,6 @@ impl Sandbox for NbtEdit {
             ).push(Row::new()
                 .push(self.screen_btn(Screen::Level))
                 .push(self.screen_btn(Screen::Player))
-                .push(self.screen_btn(Screen::Dim(0)))
             ).push(Space::new(Length::Fill, Length::Shrink))
             .push(Row::new()
                 .push(self.screen_btn(Screen::Settings))
@@ -188,7 +177,6 @@ impl Sandbox for NbtEdit {
             Screen::Apply => self.apply(),
             Screen::Level => self.level(),
             Screen::Player => self.player(),
-            Screen::Dim(_) => self.dim(),
             Screen::Settings => self.settings(),
             Screen::Help => self.help(),
             _ => todo!("unreachable by now"),
