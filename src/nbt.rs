@@ -5,7 +5,7 @@ use iced::widget::{Column, Row, Button};
 
 use crate::AppMessage;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TagType {
     End,
     Byte(i8),
@@ -25,12 +25,16 @@ pub enum TagType {
 #[derive(Debug, Clone)]
 pub enum TagMessage {
     ExpandTag(bool),
+    SelectTag(String, TagType),
+    EditTag(TagType),
+    EditKey(String),
+    RemoveTag,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Tag {
     id: usize,
-    name: Option<String>,
+    name: String,
     tag: TagType,
     expanded: bool,
 }
@@ -39,7 +43,7 @@ impl Default for Tag {
     fn default() -> Self {
         Self {
             id: 0,
-            name: None,
+            name: String::new(),
             tag: TagType::End,
             expanded: false,
         }
@@ -66,6 +70,9 @@ impl Tag {
     pub fn update(&mut self, message: TagMessage) {
         match message {
             TagMessage::ExpandTag(expanded) => self.expanded = expanded,
+            TagMessage::EditTag(t) => self.tag = t,
+            TagMessage::EditKey(key) => self.name = key,
+            _ => {},
         }
     }
 
@@ -79,7 +86,9 @@ impl Tag {
                     None
                 })
             )
-            .push(Button::new(self.name.as_ref().unwrap().as_str()))
+            .push(Button::new(self.name.as_str())
+                .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.tag.clone())))
+            )
         );
 
         if let TagType::Compound(tags) = &self.tag {
@@ -268,73 +277,73 @@ fn read_compound(data: &mut ParserData) -> Result<TagType, ParseError> {
             },
             0x01 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_byte(data)?,
                 ..Default::default()
             }),
             0x02 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_short(data)?,
                 ..Default::default()
             }),
             0x03 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_int(data)?,
                 ..Default::default()
             }),
             0x04 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_long(data)?,
                 ..Default::default()
             }),
             0x05 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_float(data)?,
                 ..Default::default()
             }),
             0x06 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_double(data)?,
                 ..Default::default()
             }),
             0x07 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_byte_array(data)?,
                 ..Default::default()
             }),
             0x08 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_string(data)?,
                 ..Default::default()
             }),
             0x09 => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_list(data)?,
                 ..Default::default()
             }),
             0x0a => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_compound(data)?,
                 ..Default::default()
             }),
             0x0b => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_int_array(data)?,
                 ..Default::default()
             }),
             0x0c => tags.push(Tag {
                 id: data.max_id,
-                name: Some(read_utf8_string(data)?),
+                name: read_utf8_string(data)?,
                 tag: read_long_array(data)?,
                 ..Default::default()
             }),
@@ -346,7 +355,7 @@ fn read_compound(data: &mut ParserData) -> Result<TagType, ParseError> {
 fn parse(data: &mut ParserData) -> Result<NbtFile, ParseError> {
     if get_type(data)? == 0x0a {
         Ok(NbtFile(Tag {
-            name: Some(read_utf8_string(data)?),
+            name: read_utf8_string(data)?,
             tag: read_compound(data)?,
             ..Default::default()
         }))

@@ -1,6 +1,6 @@
 use std::{borrow::Cow, path::Path, ffi::OsString};
 
-use iced::{widget::{Button, Text, Column}, alignment::Horizontal, Length};
+use iced::{widget::{Button, Text, Column, Row}, alignment::Horizontal, Length, Element};
 
 use crate::AppMessage;
 
@@ -100,4 +100,11 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::
     }
 
     return list;
+}
+
+pub fn labeled_element<'a>(text: impl Into<Cow<'a, str>>, element: Element<'a, AppMessage>) -> Row<'a, AppMessage> {
+    Row::new()
+        .push(Text::new(text.into()))
+        .push(element)
+        .align_items(iced::Alignment::Center)
 }
