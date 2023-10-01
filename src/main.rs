@@ -8,9 +8,10 @@ use nbt::{NbtFile, TagMessage, TagType};
 struct NbtEdit {
     screen: Screen,
     selected_tag: Option<TagType>,
-    selected_name: String,
+    selected_name: Option<String>,
     selected_id: Option<usize>,
-    temp_value: String,
+    selected_value: Option<String>,
+    selected_list: Option<Vec<TagType>>,
     path: String,
     directory: Option<String>,
     level_dat: Option<NbtFile>,
@@ -35,7 +36,9 @@ pub enum AppMessage {
     ChangeOpenPath(String),
     OpenDirectory(String),
     TagEvent(usize, TagMessage),
+    InputKey(String),
     InputValue(String),
+    InputListItem(usize, TagType),
     Pass,
 }
 
@@ -96,20 +99,18 @@ impl NbtEdit {
 
     fn level(&self) -> iced::Element<'_, AppMessage> {
         let screen = if let Some(t) = self.selected_tag.as_ref() {
-            match t {
-                TagType::End => self.screen_blank(),
-                TagType::Byte(_) |
-                TagType::Short(_) |
-                TagType::Int(_) |
-                TagType::Long(_) => self.screen_number(),
-                TagType::Float(_) => self.screen_float(),
-                TagType::Double(_) => self.screen_double(),
-                TagType::ByteArray(_) => todo!(),
-                TagType::String(_) => self.screen_string(),
-                TagType::List(_) => todo!(),
-                TagType::Compound(_) => self.screen_blank(),
-                TagType::IntArray(_) => todo!(),
-                TagType::LongArray(_) => todo!(),
+            if let Some(_) = &self.selected_name {
+                match t {
+                    TagType::End |
+                    TagType::Compound(_) |
+                    TagType::List(_) |
+                    TagType::ByteArray(_) |
+                    TagType::IntArray(_) |
+                    TagType::LongArray(_) => self.screen_blank(),
+                    _ => self.screen_pair(),
+                }
+            } else {
+                self.screen_value()
             }
         } else {
             Column::new()
@@ -154,8 +155,8 @@ impl NbtEdit {
         if let Some(_) = &self.selected_id {
             column = column.push(labeled_element(
                 "key",
-                TextInput::new("", &self.selected_name)
-                    .on_input(|x| AppMessage::TagEvent(self.selected_id.unwrap(), crate::nbt::TagMessage::EditKey(x))).into()
+                TextInput::new("", self.selected_name.as_ref().unwrap())
+                    .on_input(AppMessage::InputKey).into()
             ));
         } else {
             column = column.push("no value selected");
@@ -164,93 +165,28 @@ impl NbtEdit {
         column
     }
     
-    pub fn screen_number(&self) -> Column<'_, AppMessage> {
+    pub fn screen_pair(&self) -> Column<'_, AppMessage> {
         Column::new().width(Length::FillPortion(2))
             .push(labeled_element(
                 "key",
-                TextInput::new("", &self.selected_name)
-                    .on_input(|x| AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditKey(x))).into()
+                TextInput::new("", self.selected_name.as_ref().unwrap())
+                    .on_input(AppMessage::InputKey)
+                    .into()
             ))
             .push(labeled_element(
                 "value",
-                TextInput::new("", &self.temp_value)
+                TextInput::new("", self.selected_value.as_ref().unwrap())
                     .on_input(AppMessage::InputValue)
-                    .on_submit(if let Ok(x) = self.temp_value.parse::<i64>() {
-                            AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditTag(
-                            match self.selected_tag.as_ref().unwrap() {
-                                TagType::Byte(_) => TagType::Byte(x as i8),
-                                TagType::Short(_) => TagType::Short(x as i16),
-                                TagType::Int(_) => TagType::Int(x as i32),
-                                TagType::Long(_) => TagType::Long(x),
-                                _ => unreachable!("not accessible from other tags"),
-                            }
-                        ))} else {
-                            AppMessage::Pass
-                        })
                     .into()
             ))
     }
 
-    pub fn screen_float(&self) -> Column<'_, AppMessage> {
+    pub fn screen_value(&self) -> Column<'_, AppMessage> {
         Column::new().width(Length::FillPortion(2))
             .push(labeled_element(
-                "key",
-                TextInput::new("", &self.selected_name)
-                    .on_input(|x| AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditKey(x))).into()
-            ))
-            .push(labeled_element(
                 "value",
-                TextInput::new("", &self.temp_value)
+                TextInput::new("", &self.selected_value.as_ref().unwrap())
                     .on_input(AppMessage::InputValue)
-                    .on_submit(if let Ok(x) = self.temp_value.parse() {
-                            AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditTag(
-                            match self.selected_tag.as_ref().unwrap() {
-                                TagType::Float(_) => TagType::Float(x),
-                                _ => unreachable!("not accessible from other tags"),
-                            }
-                        ))} else {
-                            AppMessage::Pass
-                        })
-                    .into()
-            ))
-    }
-
-    pub fn screen_double(&self) -> Column<'_, AppMessage> {
-        Column::new().width(Length::FillPortion(2))
-            .push(labeled_element(
-                "key",
-                TextInput::new("", &self.selected_name)
-                    .on_input(|x| AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditKey(x))).into()
-            ))
-            .push(labeled_element(
-                "value",
-                TextInput::new("", &self.temp_value)
-                    .on_input(AppMessage::InputValue)
-                    .on_submit(if let Ok(x) = self.temp_value.parse() {
-                            AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditTag(
-                            match self.selected_tag.as_ref().unwrap() {
-                                TagType::Double(_) => TagType::Double(x),
-                                _ => unreachable!("not accessible from other tags"),
-                            }
-                        ))} else {
-                            AppMessage::Pass
-                        })
-                    .into()
-            ))
-    }
-
-    pub fn screen_string(&self) -> Column<'_, AppMessage> {
-        Column::new().width(Length::FillPortion(2))
-            .push(labeled_element(
-                "key",
-                TextInput::new("", &self.selected_name)
-                    .on_input(|x| AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditKey(x))).into()
-            ))
-            .push(labeled_element(
-                "value",
-                TextInput::new("", &self.temp_value)
-                    .on_input(AppMessage::InputValue)
-                    .on_submit(AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditTag(TagType::String(self.temp_value.clone()))))
                     .into()
             ))
     }
@@ -263,9 +199,10 @@ impl Sandbox for NbtEdit {
         NbtEdit {
             screen: Screen::Welcome,
             selected_tag: None,
-            selected_name: String::new(),
+            selected_name: None,
             selected_id: None,
-            temp_value: String::new(),
+            selected_value: None,
+            selected_list: None,
             path: "/home".to_string(),
             directory: None,
             level_dat: None,
@@ -283,6 +220,7 @@ impl Sandbox for NbtEdit {
             AppMessage::OpenDirectory(d) => {
                 let path = d.clone();
                 self.directory = Some(d);
+                self.selected_tag = None;
                 self.screen = Screen::Level;
                 self.level_dat = Some(NbtFile::open(format!("{}/level.dat", path)).unwrap());
             },
@@ -291,37 +229,42 @@ impl Sandbox for NbtEdit {
                 self.selected_id = Some(id);
                 
                 match &t {
-                    TagType::Byte(v) => self.temp_value = v.to_string(),
-                    TagType::Short(v) => self.temp_value = v.to_string(),
-                    TagType::Int(v) => self.temp_value = v.to_string(),
-                    TagType::Long(v) => self.temp_value = v.to_string(),
-                    TagType::Float(v) => self.temp_value = v.to_string(),
-                    TagType::Double(v) => self.temp_value = v.to_string(),
-                    TagType::String(v) => self.temp_value = v.to_owned(),
+                    TagType::Byte(v) => self.selected_value = Some(v.to_string()),
+                    TagType::Short(v) => self.selected_value = Some(v.to_string()),
+                    TagType::Int(v) => self.selected_value = Some(v.to_string()),
+                    TagType::Long(v) => self.selected_value = Some(v.to_string()),
+                    TagType::Float(v) => self.selected_value = Some(v.to_string()),
+                    TagType::Double(v) => self.selected_value = Some(v.to_string()),
+                    TagType::String(v) => self.selected_value = Some(v.to_owned()),
                     _ => {},
                 }
 
                 self.selected_tag = Some(t);
             },
             AppMessage::TagEvent(id, TagMessage::RemoveTag) => {},
-            AppMessage::TagEvent(id, TagMessage::EditKey(key)) => {
-                self.selected_name = key.clone();
-                self.level_dat.as_mut().unwrap().get_mut_tag().find(id).unwrap().update(TagMessage::EditKey(key));
-            }
-            AppMessage::TagEvent(id, TagMessage::EditTag(t)) => {
-                match &t {
-                    TagType::Byte(v) => self.temp_value = v.to_string(),
-                    TagType::Short(v) => self.temp_value = v.to_string(),
-                    TagType::Int(v) => self.temp_value = v.to_string(),
-                    TagType::Long(v) => self.temp_value = v.to_string(),
-                    TagType::Float(v) => self.temp_value = v.to_string(),
-                    TagType::Double(v) => self.temp_value = v.to_string(),
-                    TagType::String(v) => self.temp_value = v.to_owned(),
-                    _ => {},
-                }
-            }
+            AppMessage::InputKey(key) => self.selected_name = Some(key),
+            AppMessage::InputListItem(id, value) => {},
+            AppMessage::TagEvent(id, TagMessage::EditTag { name, value }) => {
+
+            },
+            // AppMessage::TagEvent(id, TagMessage::EditKey(key)) => {
+            //     self.selected_name = Some(key.clone());
+            //     self.level_dat.as_mut().unwrap().get_mut_tag().find(id).unwrap().update(TagMessage::EditKey(key));
+            // }
+            // AppMessage::TagEvent(id, TagMessage::EditTag(t)) => {
+            //     match &t {
+            //         TagType::Byte(v) => self.selected_value = Some(v.to_string()),
+            //         TagType::Short(v) => self.selected_value = Some(v.to_string()),
+            //         TagType::Int(v) => self.selected_value = Some(v.to_string()),
+            //         TagType::Long(v) => self.selected_value = Some(v.to_string()),
+            //         TagType::Float(v) => self.selected_value = Some(v.to_string()),
+            //         TagType::Double(v) => self.selected_value = Some(v.to_string()),
+            //         TagType::String(v) => self.selected_value = Some(v.to_owned()),
+            //         _ => {},
+            //     }
+            // }
             AppMessage::TagEvent(id, msg) => self.level_dat.as_mut().unwrap().get_mut_tag().find(id).unwrap().update(msg),
-            AppMessage::InputValue(value) => self.temp_value = value,
+            AppMessage::InputValue(value) => self.selected_value = Some(value),
             AppMessage::Pass => {},
         }
     }

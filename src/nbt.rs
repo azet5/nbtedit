@@ -25,9 +25,11 @@ pub enum TagType {
 #[derive(Debug, Clone)]
 pub enum TagMessage {
     ExpandTag(bool),
-    SelectTag(String, TagType),
-    EditTag(TagType),
-    EditKey(String),
+    SelectTag(Option<String>, TagType),
+    EditTag {
+        name: String,
+        value: Option<TagType>
+    },
     RemoveTag,
 }
 
@@ -70,24 +72,35 @@ impl Tag {
     pub fn update(&mut self, message: TagMessage) {
         match message {
             TagMessage::ExpandTag(expanded) => self.expanded = expanded,
-            TagMessage::EditTag(t) => self.tag = t,
-            TagMessage::EditKey(key) => self.name = key,
+            TagMessage::EditTag {
+                name,
+                value
+            } => {
+                self.name = name;
+
+                if let Some(value) = value {
+                    self.tag = value;
+                }
+            },
             _ => {},
         }
     }
 
     pub fn view(&self) -> Column<'_, AppMessage> {
-        let mut column = Column::new();
+        let mut column = Column::new().padding([0, 12]);
         column = column.push(Row::new()
             .push(Button::new(if self.expanded { "-" } else { "+" })
-                .on_press_maybe(if let TagType::Compound(_) = self.tag {
-                    Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded)))
-                } else {
-                    None
+                .on_press_maybe(match self.tag {
+                    TagType::Compound(_) |
+                    TagType::List(_) |
+                    TagType::ByteArray(_) |
+                    TagType::IntArray(_) |
+                    TagType::LongArray(_) => Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded))),
+                    _ => None,
                 })
             )
             .push(Button::new(self.name.as_str())
-                .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.tag.clone())))
+                .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(Some(self.name.clone()), self.tag.clone())))
             )
         );
 
@@ -95,6 +108,31 @@ impl Tag {
             if self.expanded {
                 for tag in tags {
                     column = column.push(tag.view());
+                }
+            }
+        } else if let TagType::List(tags) = &self.tag {
+            if self.expanded {
+                for tag in tags {
+                    // if let TagType::Compound(tags) = tag {
+                    //     column = column.push(Row::new()
+                    //         .push(Button::new(if self.expanded { "-" } else { "+" })
+                    //             .on_press_maybe(if let TagType::Compound(_) = self.tag {
+                    //                 Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded)))
+                    //             } else {
+                    //                 None
+                    //             })
+                    //         )
+                    //         .push(Button::new("(empty)")
+                    //             .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(Some(self.name.clone()), self.tag.clone())))
+                    //         ));
+                    //     for tag in tags {
+                    //         column = column.push(tag.view());
+                    //     }
+                    // } else {
+                        column = column.push(Button::new("(empty)")
+                            .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(None, self.tag.clone())))
+                        );
+                    // }
                 }
             }
         }
