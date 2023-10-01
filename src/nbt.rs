@@ -53,6 +53,18 @@ impl Default for Tag {
 }
 
 impl Tag {
+    pub fn remove(&mut self, id: usize) {
+        if let TagType::Compound(tags) = &mut self.tag {
+            if let Some(i) = tags.iter_mut().map(|x| {
+                x.remove(id);
+                x
+            }).position(|x| x.id == id) {
+                tags.remove(i);
+                return;
+            }
+        }
+    }
+
     pub fn find(&mut self, id: usize) -> Option<&mut Self> {
         if self.id == id {
             return Some(self);

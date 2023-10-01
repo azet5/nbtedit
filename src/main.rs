@@ -11,7 +11,6 @@ struct NbtEdit {
     selected_name: Option<String>,
     selected_id: Option<usize>,
     selected_value: Option<String>,
-    selected_list: Option<Vec<TagType>>,
     path: String,
     directory: Option<String>,
     level_dat: Option<NbtFile>,
@@ -38,7 +37,6 @@ pub enum AppMessage {
     TagEvent(usize, TagMessage),
     InputKey(String),
     InputValue(String),
-    InputListItem(usize, TagType),
     Pass,
 }
 
@@ -202,7 +200,6 @@ impl Sandbox for NbtEdit {
             selected_name: None,
             selected_id: None,
             selected_value: None,
-            selected_list: None,
             path: "/home".to_string(),
             directory: None,
             level_dat: None,
@@ -241,9 +238,8 @@ impl Sandbox for NbtEdit {
 
                 self.selected_tag = Some(t);
             },
-            AppMessage::TagEvent(id, TagMessage::RemoveTag) => {},
+            AppMessage::TagEvent(id, TagMessage::RemoveTag) => self.level_dat.as_mut().unwrap().get_mut_tag().remove(id),
             AppMessage::InputKey(key) => self.selected_name = Some(key),
-            AppMessage::InputListItem(id, value) => {},
             AppMessage::TagEvent(id, TagMessage::EditTag { name, value }) => {
 
             },
