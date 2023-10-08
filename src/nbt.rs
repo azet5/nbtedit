@@ -22,6 +22,26 @@ pub enum TagType {
     LongArray(Vec<i64>),
 }
 
+impl ToString for TagType {
+    fn to_string(&self) -> String {
+        String::from(match self {
+            TagType::End => "TAG_End",
+            TagType::Byte(_) => "TAG_Byte",
+            TagType::Short(_) => "TAG_Short",
+            TagType::Int(_) => "TAG_Int",
+            TagType::Long(_) => "TAG_Long",
+            TagType::Float(_) => "TAG_Float",
+            TagType::Double(_) => "TAG_Double",
+            TagType::ByteArray(_) => "TAG_ByteArray",
+            TagType::String(_) => "TAG_String",
+            TagType::List(_) => "TAG_List",
+            TagType::Compound(_) => "TAG_Compound",
+            TagType::IntArray(_) => "TAG_IntArray",
+            TagType::LongArray(_) => "TAG_LongArray",
+        })
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum TagMessage {
     ExpandTag(bool),

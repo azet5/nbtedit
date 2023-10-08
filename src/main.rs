@@ -2,7 +2,7 @@ mod helpers;
 mod nbt;
 
 use helpers::{btn_centered, default_paths, dir_buttons, labeled_element};
-use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable, TextInput}, Length, Alignment};
+use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable, TextInput, Text}, Length, Alignment};
 use nbt::{NbtFile, TagMessage, TagType};
 
 struct NbtEdit {
@@ -96,23 +96,33 @@ impl NbtEdit {
     }
 
     fn level(&self) -> iced::Element<'_, AppMessage> {
-        let screen = if let Some(t) = self.selected_tag.as_ref() {
+        let mut screen = Column::new().width(Length::FillPortion(2));
+        if let Some(t) = self.selected_tag.as_ref() {
+            let str = format!("Type: {}", t.to_string());
+            screen = screen.push(Text::new(str));
+
             if let Some(_) = &self.selected_name {
+                screen = screen.push(labeled_element(
+                    "key",
+                    TextInput::new("", self.selected_name.as_ref().unwrap())
+                        .on_input(AppMessage::InputKey).into()
+                ));
                 match t {
                     TagType::End |
                     TagType::Compound(_) |
                     TagType::List(_) |
                     TagType::ByteArray(_) |
                     TagType::IntArray(_) |
-                    TagType::LongArray(_) => self.screen_blank(),
-                    _ => self.screen_pair(),
+                    TagType::LongArray(_) => {},
+                    _ => screen = screen.push(labeled_element(
+                        "value",
+                        TextInput::new("", self.selected_value.as_ref().unwrap())
+                            .on_input(AppMessage::InputValue)
+                            .into()
+                    )),
                 }
-            } else {
-                self.screen_value()
             }
-        } else {
-            Column::new()
-        };
+        }
 
         Row::new()
             .push(Scrollable::new(self.level_dat.as_ref().unwrap().get_tag().view()).width(Length::FillPortion(2)))
@@ -145,48 +155,6 @@ impl NbtEdit {
             .push(Space::new(Length::Fill, Length::Fill))
             .align_items(Alignment::Center)
             .into()
-    }
-    
-    pub fn screen_blank(&self) -> Column<'_, AppMessage> {
-        let mut column = Column::new().width(Length::FillPortion(2));
-    
-        if let Some(_) = &self.selected_id {
-            column = column.push(labeled_element(
-                "key",
-                TextInput::new("", self.selected_name.as_ref().unwrap())
-                    .on_input(AppMessage::InputKey).into()
-            ));
-        } else {
-            column = column.push("no value selected");
-        }
-    
-        column
-    }
-    
-    pub fn screen_pair(&self) -> Column<'_, AppMessage> {
-        Column::new().width(Length::FillPortion(2))
-            .push(labeled_element(
-                "key",
-                TextInput::new("", self.selected_name.as_ref().unwrap())
-                    .on_input(AppMessage::InputKey)
-                    .into()
-            ))
-            .push(labeled_element(
-                "value",
-                TextInput::new("", self.selected_value.as_ref().unwrap())
-                    .on_input(AppMessage::InputValue)
-                    .into()
-            ))
-    }
-
-    pub fn screen_value(&self) -> Column<'_, AppMessage> {
-        Column::new().width(Length::FillPortion(2))
-            .push(labeled_element(
-                "value",
-                TextInput::new("", &self.selected_value.as_ref().unwrap())
-                    .on_input(AppMessage::InputValue)
-                    .into()
-            ))
     }
 }
 
