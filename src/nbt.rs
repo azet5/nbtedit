@@ -70,12 +70,16 @@ impl Tag {
             return Some(self);
         }
 
-        if let TagType::Compound(tags) = &mut self.tag {
-            for tag in tags {
-                if let Some(s) = tag.find(id) {
-                    return Some(s);
+        match &mut self.tag {
+            TagType::Compound(tags) |
+            TagType::List(tags) => {
+                for tag in tags {
+                    if let Some(s) = tag.find(id) {
+                        return Some(s);
+                    }
                 }
-            }
+            },
+            _ => {},
         }
 
         None
@@ -127,7 +131,7 @@ impl Tag {
                 for tag in tags {
                     if let TagType::Compound(tags) = &tag.tag {
                         column = column.push(Row::new()
-                            .push(Button::new(if self.expanded { "-" } else { "+" })
+                            .push(Button::new(if tag.expanded { "-" } else { "+" })
                                 .on_press_maybe(if let TagType::Compound(_) = tag.tag {
                                     Some(AppMessage::TagEvent(tag.id, TagMessage::ExpandTag(!tag.expanded)))
                                 } else {
@@ -137,8 +141,10 @@ impl Tag {
                             .push(Button::new("(empty)")
                                 .on_press(AppMessage::TagEvent(tag.id, TagMessage::SelectTag(tag.name.clone(), tag.tag.clone())))
                             ));
-                        for tag in tags {
-                            column = column.push(tag.view());
+                        if tag.expanded {
+                            for tag in tags {
+                                column = column.push(tag.view());
+                            }
                         }
                     } else {
                         column = column.push(Button::new("(empty)")
