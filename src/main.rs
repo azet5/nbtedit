@@ -96,7 +96,7 @@ impl NbtEdit {
     }
 
     fn level(&self) -> iced::Element<'_, AppMessage> {
-        let mut screen = Column::new().width(Length::FillPortion(2));
+        let mut screen = Column::new().width(Length::FillPortion(2)).padding(4).spacing(4);
         if let Some(t) = self.selected_tag.as_ref() {
             let str = format!("Type: {}", t.to_string());
             screen = screen.push(Text::new(str));
@@ -108,7 +108,7 @@ impl NbtEdit {
                         .on_input(AppMessage::InputKey).into()
                 ));
             }
-            
+
             match t {
                 TagType::End |
                 TagType::Compound(_) |

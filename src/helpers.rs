@@ -104,7 +104,7 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::
 
 pub fn labeled_element<'a>(text: impl Into<Cow<'a, str>>, element: Element<'a, AppMessage>) -> Row<'a, AppMessage> {
     Row::new()
-        .push(Text::new(text.into()))
+        .push(Text::new(text.into()).width(Length::Fixed(80.0)))
         .push(element)
         .align_items(iced::Alignment::Center)
 }
