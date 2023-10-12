@@ -107,20 +107,21 @@ impl NbtEdit {
                     TextInput::new("", self.selected_name.as_ref().unwrap())
                         .on_input(AppMessage::InputKey).into()
                 ));
-                match t {
-                    TagType::End |
-                    TagType::Compound(_) |
-                    TagType::List(_) |
-                    TagType::ByteArray(_) |
-                    TagType::IntArray(_) |
-                    TagType::LongArray(_) => {},
-                    _ => screen = screen.push(labeled_element(
-                        "value",
-                        TextInput::new("", self.selected_value.as_ref().unwrap())
-                            .on_input(AppMessage::InputValue)
-                            .into()
-                    )),
-                }
+            }
+            
+            match t {
+                TagType::End |
+                TagType::Compound(_) |
+                TagType::List(_) |
+                TagType::ByteArray(_) |
+                TagType::IntArray(_) |
+                TagType::LongArray(_) => {},
+                _ => screen = screen.push(labeled_element(
+                    "value",
+                    TextInput::new("", self.selected_value.as_ref().unwrap())
+                        .on_input(AppMessage::InputValue)
+                        .into()
+                )),
             }
         }
 
