@@ -120,25 +120,15 @@ impl NbtEdit {
             .push(Space::new(Length::Fill, Length::Fill))
             .align_items(Alignment::Center)
             .into()
-    }
-
+        }
+        
     fn level(&self) -> iced::Element<'_, AppMessage> {
         let mut screen = Column::new().width(Length::FillPortion(2)).padding(4).spacing(4);
-        if let Some(data) = &self.create_data {
-            screen = screen.push("Insert new tag")
-                .push(labeled_element("Type", PickList::new(
-                    &TagChoice::ALL[..],
-                    Some(data.tag),
-                    |x| AppMessage::InputTagValue(x)).into()))
-                .push(btn_centered("Done", 70))
-                .push(btn_centered("Cancel", 70).on_press(AppMessage::ToggleCreate(ToggleCreateMode::None)));
-        } else {
-            if let ToggleCreateMode::ListItem(i) = &self.create_screen {
-
-            } else {
+        match &self.create_screen {
+            ToggleCreateMode::None => {
                 if let Some(t) = self.selected_tag.as_ref() {
                     screen = screen.push(labeled_element("type", Text::new(t.to_string()).into()));
-        
+            
                     if let Some(_) = &self.selected_name {
                         screen = screen.push(labeled_element(
                             "key",
@@ -146,7 +136,7 @@ impl NbtEdit {
                                 .on_input(AppMessage::InputKey).into()
                         ));
                     }
-        
+            
                     match t {
                         TagType::End |
                         TagType::Compound(_) |
@@ -157,23 +147,39 @@ impl NbtEdit {
                         _ => screen = screen.push(labeled_element(
                             "value",
                             TextInput::new("", self.selected_value.as_ref().unwrap())
-                                .on_input(AppMessage::InputValue)
-                                .into()
+                            .on_input(AppMessage::InputValue)
+                            .into()
                         )),
                     }
-    
+            
                     screen = screen.push(Space::with_height(Length::Fill));
                     let mut row = Row::new()
                         .push(btn_centered("Apply", 100));
                     if let TagType::Compound(_) = t {
                         row = row.push(btn_centered("Insert tag", 100).on_press(AppMessage::ToggleCreate(ToggleCreateMode::Tag)));
                     } else if let TagType::List(tags) = t {
-                        row = row.push(btn_centered("Insert", 100).on_press(AppMessage::ToggleCreate(ToggleCreateMode::ListItem(tags[0].get().clone()))));
+                        row = row.push(btn_centered("Insert", 100).on_press(if tags.len() > 0 {
+                            AppMessage::ToggleCreate(ToggleCreateMode::ListItem(tags[0].get().clone()))
+                        } else {
+                            AppMessage::ToggleCreate(ToggleCreateMode::Tag)
+                        }));
                     }
                     row = row.push(btn_centered("Delete", 100));
                     screen = screen.push(row);
                 }
-            }
+            },
+            ToggleCreateMode::Tag => {
+                screen = screen.push("Insert new tag")
+                    .push(labeled_element("Type", PickList::new(
+                        &TagChoice::ALL[..],
+                        Some(self.create_data.as_ref().unwrap().tag),
+                        |x| AppMessage::InputTagValue(x)).into()))
+                    .push(btn_centered("Done", 70))
+                    .push(btn_centered("Cancel", 70).on_press(AppMessage::ToggleCreate(ToggleCreateMode::None)));
+            },
+            ToggleCreateMode::ListItem(_) => {
+
+            },
         }
 
         Row::new()
@@ -244,6 +250,7 @@ impl Sandbox for NbtEdit {
                 self.level_dat = Some(NbtFile::open(format!("{}/level.dat", path)).unwrap());
             },
             AppMessage::TagEvent(id, TagMessage::SelectTag(name, t)) => {
+                self.create_screen = ToggleCreateMode::None;
                 self.selected_name = name;
                 self.selected_id = Some(id);
                 

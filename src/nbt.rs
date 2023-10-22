@@ -143,7 +143,7 @@ impl Tag {
                     _ => None,
                 })
             )
-            .push(Button::new(self.name.as_ref().unwrap().as_str())
+            .push(Button::new(if let Some(s) = self.name.as_ref() { s.as_str() } else { "(empty)" } )
                 .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.tag.clone())))
             )
         );
@@ -157,28 +157,7 @@ impl Tag {
         } else if let TagType::List(tags) = &self.tag {
             if self.expanded {
                 for tag in tags {
-                    if let TagType::Compound(tags) = &tag.tag {
-                        column = column.push(Row::new()
-                            .push(Button::new(if tag.expanded { "-" } else { "+" })
-                                .on_press_maybe(if let TagType::Compound(_) = tag.tag {
-                                    Some(AppMessage::TagEvent(tag.id, TagMessage::ExpandTag(!tag.expanded)))
-                                } else {
-                                    None
-                                })
-                            )
-                            .push(Button::new("(empty)")
-                                .on_press(AppMessage::TagEvent(tag.id, TagMessage::SelectTag(tag.name.clone(), tag.tag.clone())))
-                            ));
-                        if tag.expanded {
-                            for tag in tags {
-                                column = column.push(tag.view());
-                            }
-                        }
-                    } else {
-                        column = column.push(Button::new("(empty)")
-                            .on_press(AppMessage::TagEvent(tag.id, TagMessage::SelectTag(tag.name.clone(), tag.tag.clone())))
-                        );
-                    }
+                    column = column.push(tag.view());
                 }
             }
         }
