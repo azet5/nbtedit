@@ -1,4 +1,4 @@
-use std::{path::Path, slice::Iter, fs::File, io::Read};
+use std::{path::Path, slice::Iter, fs::File, io::Read, fmt::{Display, Formatter}};
 
 use flate2::read::GzDecoder;
 use iced::widget::{Column, Row, Button};
@@ -22,9 +22,9 @@ pub enum TagType {
     LongArray(Vec<i64>),
 }
 
-impl ToString for TagType {
-    fn to_string(&self) -> String {
-        String::from(match self {
+impl Display for TagType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
             TagType::End => "TAG_End",
             TagType::Byte(_) => "TAG_Byte",
             TagType::Short(_) => "TAG_Short",
@@ -50,6 +50,10 @@ pub enum TagMessage {
         name: Option<String>,
         value: Option<TagType>
     },
+    CreateTag {
+        name: String,
+        tag: TagType,
+    },
     RemoveTag,
 }
 
@@ -73,6 +77,10 @@ impl Default for Tag {
 }
 
 impl Tag {
+    pub fn get(&self) -> &TagType {
+        &self.tag
+    }
+
     pub fn remove(&mut self, id: usize) {
         if let TagType::Compound(tags) = &mut self.tag {
             if let Some(i) = tags.iter_mut().map(|x| {

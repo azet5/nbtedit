@@ -1,8 +1,63 @@
-use std::{borrow::Cow, path::Path, ffi::OsString};
+use std::{borrow::Cow, path::Path, ffi::OsString, fmt::{Display, Formatter}};
 
 use iced::{widget::{Button, Text, Column, Row}, alignment::Horizontal, Length, Element};
 
 use crate::AppMessage;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TagChoice {
+    End,
+    Byte,
+    Short,
+    Int,
+    Long,
+    Float,
+    Double,
+    ByteArray,
+    String,
+    List,
+    Compound,
+    IntArray,
+    LongArray,
+}
+
+impl TagChoice {
+    pub const ALL: [Self; 13] = [
+        TagChoice::End,
+        TagChoice::Byte,
+        TagChoice::Short,
+        TagChoice::Int,
+        TagChoice::Long,
+        TagChoice::Float,
+        TagChoice::Double,
+        TagChoice::ByteArray,
+        TagChoice::String,
+        TagChoice::List,
+        TagChoice::Compound,
+        TagChoice::IntArray,
+        TagChoice::LongArray,
+    ];
+}
+
+impl Display for TagChoice {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            TagChoice::End => "TAG_End",
+            TagChoice::Byte => "TAG_Byte",
+            TagChoice::Short => "TAG_Short",
+            TagChoice::Int => "TAG_Int",
+            TagChoice::Long => "TAG_Long",
+            TagChoice::Float => "TAG_Float",
+            TagChoice::Double => "TAG_Double",
+            TagChoice::ByteArray => "TAG_ByteArray",
+            TagChoice::String => "TAG_String",
+            TagChoice::List => "TAG_List",
+            TagChoice::Compound => "TAG_Compound",
+            TagChoice::IntArray => "TAG_IntArray",
+            TagChoice::LongArray => "TAG_LongArray",
+        })
+    }
+}
 
 #[macro_export]
 macro_rules! is_dir {
