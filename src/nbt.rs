@@ -63,6 +63,7 @@ pub struct Tag {
     name: Option<String>,
     tag: TagType,
     expanded: bool,
+    hidden: bool,
 }
 
 impl Default for Tag {
@@ -72,6 +73,7 @@ impl Default for Tag {
             name: None,
             tag: TagType::End,
             expanded: false,
+            hidden: false,
         }
     }
 }
@@ -126,38 +128,41 @@ impl Tag {
                     self.tag = value;
                 }
             },
+            TagMessage::RemoveTag => self.hidden = true,
             _ => {},
         }
     }
 
     pub fn view(&self) -> Column<'_, AppMessage> {
         let mut column = Column::new().padding([0, 12]);
-        column = column.push(Row::new()
-            .push(Button::new(if self.expanded { "-" } else { "+" })
-                .on_press_maybe(match self.tag {
-                    TagType::Compound(_) |
-                    TagType::List(_) |
-                    TagType::ByteArray(_) |
-                    TagType::IntArray(_) |
-                    TagType::LongArray(_) => Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded))),
-                    _ => None,
-                })
-            )
-            .push(Button::new(if let Some(s) = self.name.as_ref() { s.as_str() } else { "(empty)" } )
-                .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.tag.clone())))
-            )
-        );
-
-        if let TagType::Compound(tags) = &self.tag {
-            if self.expanded {
-                for tag in tags {
-                    column = column.push(tag.view());
+        if !self.hidden {
+            column = column.push(Row::new()
+                .push(Button::new(if self.expanded { "-" } else { "+" })
+                    .on_press_maybe(match self.tag {
+                        TagType::Compound(_) |
+                        TagType::List(_) |
+                        TagType::ByteArray(_) |
+                        TagType::IntArray(_) |
+                        TagType::LongArray(_) => Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded))),
+                        _ => None,
+                    })
+                )
+                .push(Button::new(if let Some(s) = self.name.as_ref() { s.as_str() } else { "(empty)" } )
+                    .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.tag.clone())))
+                )
+            );
+    
+            if let TagType::Compound(tags) = &self.tag {
+                if self.expanded {
+                    for tag in tags {
+                        column = column.push(tag.view());
+                    }
                 }
-            }
-        } else if let TagType::List(tags) = &self.tag {
-            if self.expanded {
-                for tag in tags {
-                    column = column.push(tag.view());
+            } else if let TagType::List(tags) = &self.tag {
+                if self.expanded {
+                    for tag in tags {
+                        column = column.push(tag.view());
+                    }
                 }
             }
         }

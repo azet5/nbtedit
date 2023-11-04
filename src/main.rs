@@ -1,9 +1,11 @@
 mod helpers;
 mod nbt;
+mod queue;
 
 use helpers::{btn_centered, default_paths, dir_buttons, labeled_element, TagChoice};
 use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable, TextInput, Text, PickList}, Length, Alignment};
 use nbt::{NbtFile, TagMessage, TagType};
+use queue::{ActionQueue, ActionType};
 
 struct NbtEdit {
     screen: Screen,
@@ -16,6 +18,7 @@ struct NbtEdit {
     path: String,
     directory: Option<String>,
     level_dat: Option<NbtFile>,
+    queue: ActionQueue,
 }
 
 #[derive(Debug, Clone)]
@@ -154,7 +157,21 @@ impl NbtEdit {
             
                     screen = screen.push(Space::with_height(Length::Fill));
                     let mut row = Row::new()
-                        .push(btn_centered("Apply", 100));
+                        .push(btn_centered("Apply", 100)
+                            .on_press(AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::EditTag {
+                                name: self.selected_name.clone(),
+                                value: Some(match self.selected_tag.as_ref().unwrap() {
+                                    TagType::Byte(_) => TagType::Byte(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    TagType::Short(_) => TagType::Short(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    TagType::Int(_) => TagType::Int(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    TagType::Long(_) => TagType::Long(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    TagType::Float(_) => TagType::Float(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    TagType::Double(_) => TagType::Double(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    TagType::String(_) => TagType::String(self.selected_value.as_ref().unwrap().parse().unwrap()),
+                                    _ => self.selected_tag.as_ref().unwrap().clone(),
+                                }),
+                            }))
+                        );
                     if let TagType::Compound(_) = t {
                         row = row.push(btn_centered("Insert tag", 100).on_press(AppMessage::ToggleCreate(ToggleCreateMode::Tag)));
                     } else if let TagType::List(tags) = t {
@@ -164,12 +181,16 @@ impl NbtEdit {
                             AppMessage::ToggleCreate(ToggleCreateMode::Tag)
                         }));
                     }
-                    row = row.push(btn_centered("Delete", 100));
+                    row = row.push(btn_centered("Delete", 100).on_press(AppMessage::TagEvent(self.selected_id.unwrap(), TagMessage::RemoveTag)));
                     screen = screen.push(row);
                 }
             },
             ToggleCreateMode::Tag => {
                 screen = screen.push("Insert new tag")
+                    .push(labeled_element("Name", TextInput::new(
+                        "",
+                        self.create_data.as_ref().unwrap().name.as_str()
+                    ).on_input(|x| AppMessage::InputTagName(x)).into()))
                     .push(labeled_element("Type", PickList::new(
                         &TagChoice::ALL[..],
                         Some(self.create_data.as_ref().unwrap().tag),
@@ -231,6 +252,7 @@ impl Sandbox for NbtEdit {
             path: "/home".to_string(),
             directory: None,
             level_dat: None,
+            queue: ActionQueue::new(),
         }
     }
 
@@ -267,10 +289,21 @@ impl Sandbox for NbtEdit {
 
                 self.selected_tag = Some(t);
             },
-            AppMessage::TagEvent(id, TagMessage::RemoveTag) => self.level_dat.as_mut().unwrap().get_mut_tag().remove(id),
+            AppMessage::TagEvent(id, TagMessage::RemoveTag) => {
+                self.queue.add(ActionType::Delete(id));
+                self.selected_id = None;
+                self.selected_name = None;
+                self.selected_tag = None;
+                self.level_dat.as_mut().unwrap().get_mut_tag().find(id).unwrap().update(TagMessage::RemoveTag);
+            },
             AppMessage::InputKey(key) => self.selected_name = Some(key),
-            AppMessage::TagEvent(id, TagMessage::EditTag { name, value }) => {
-
+            AppMessage::TagEvent(id, ref e @ TagMessage::EditTag { .. }) => {
+                self.queue.add(ActionType::Edit {
+                    id,
+                    old_name: self.selected_name.as_ref().unwrap().clone(),
+                    old_value: self.selected_tag.as_ref().unwrap().clone(),
+                });
+                self.level_dat.as_mut().unwrap().get_mut_tag().find(id).unwrap().update(e.clone());
             },
             // AppMessage::TagEvent(id, TagMessage::EditKey(key)) => {
             //     self.selected_name = Some(key.clone());
