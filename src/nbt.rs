@@ -83,6 +83,10 @@ impl Tag {
         &self.tag
     }
 
+    pub fn name(&self) -> Option<&String> {
+        self.name.as_ref()
+    }
+
     pub fn remove(&mut self, id: usize) {
         if let TagType::Compound(tags) = &mut self.tag {
             if let Some(i) = tags.iter_mut().map(|x| {
@@ -95,7 +99,27 @@ impl Tag {
         }
     }
 
-    pub fn find(&mut self, id: usize) -> Option<&mut Self> {
+    pub fn find(&self, id: usize) -> Option<&Self> {
+        if self.id == id {
+            return Some(self);
+        }
+
+        match &self.tag {
+            TagType::Compound(tags) |
+            TagType::List(tags) => {
+                for tag in tags {
+                    if let Some(s) = tag.find(id) {
+                        return Some(s);
+                    }
+                }
+            },
+            _ => {},
+        }
+
+        None
+    }
+
+    pub fn find_mut(&mut self, id: usize) -> Option<&mut Self> {
         if self.id == id {
             return Some(self);
         }
@@ -104,7 +128,7 @@ impl Tag {
             TagType::Compound(tags) |
             TagType::List(tags) => {
                 for tag in tags {
-                    if let Some(s) = tag.find(id) {
+                    if let Some(s) = tag.find_mut(id) {
                         return Some(s);
                     }
                 }

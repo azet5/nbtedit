@@ -1,3 +1,5 @@
+use std::slice::Iter;
+
 use crate::nbt::TagType;
 
 #[derive(Debug, Clone)]
@@ -24,5 +26,13 @@ impl ActionQueue {
 
     pub fn add(&mut self, action: ActionType) {
         self.0.push(action);
+    }
+
+    pub fn length(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn iter(&self) -> Iter<'_, ActionType> {
+        self.0.iter()
     }
 }
