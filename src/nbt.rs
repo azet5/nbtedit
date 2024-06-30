@@ -1,4 +1,4 @@
-use std::{path::Path, slice::Iter, fs::File, io::Read, fmt::{Display, Formatter}};
+use std::{fmt::{Display, Formatter}, fs::File, io::Read, path::Path, slice::Iter};
 
 use flate2::read::GzDecoder;
 use iced::widget::{Column, Row, Button};
@@ -22,22 +22,38 @@ pub enum TagType {
     LongArray(Vec<i64>),
 }
 
+impl TagType {
+    pub fn type_name(&self) -> String {
+        match self {
+            TagType::End => "TAG_End".to_string(),
+            TagType::Byte(_) => "TAG_Byte".to_string(),
+            TagType::Short(_) => "TAG_Short".to_string(),
+            TagType::Int(_) => "TAG_Int".to_string(),
+            TagType::Long(_) => "TAG_Long".to_string(),
+            TagType::Float(_) => "TAG_Float".to_string(),
+            TagType::Double(_) => "TAG_Double".to_string(),
+            TagType::ByteArray(_) => "TAG_ByteArray".to_string(),
+            TagType::String(_) => "TAG_String".to_string(),
+            TagType::List(_) => "TAG_List".to_string(),
+            TagType::Compound(_) => "TAG_Compund".to_string(),
+            TagType::IntArray(_) => "TAG_IntArray".to_string(),
+            TagType::LongArray(_) => "TAG_LongArray".to_string(),
+        }
+    }
+}
+
 impl Display for TagType {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", match self {
-            TagType::End => "TAG_End",
-            TagType::Byte(_) => "TAG_Byte",
-            TagType::Short(_) => "TAG_Short",
-            TagType::Int(_) => "TAG_Int",
-            TagType::Long(_) => "TAG_Long",
-            TagType::Float(_) => "TAG_Float",
-            TagType::Double(_) => "TAG_Double",
-            TagType::ByteArray(_) => "TAG_ByteArray",
-            TagType::String(_) => "TAG_String",
-            TagType::List(_) => "TAG_List",
-            TagType::Compound(_) => "TAG_Compound",
-            TagType::IntArray(_) => "TAG_IntArray",
-            TagType::LongArray(_) => "TAG_LongArray",
+            TagType::End => String::new(),
+            TagType::Byte(x) => x.to_string(),
+            TagType::Short(x) => x.to_string(),
+            TagType::Int(x) => x.to_string(),
+            TagType::Long(x) => x.to_string(),
+            TagType::Float(x) => x.to_string(),
+            TagType::Double(x) => x.to_string(),
+            TagType::String(x) => x.to_string(),
+            _ => unreachable!("compound types should never be stringified")
         })
     }
 }
@@ -45,7 +61,7 @@ impl Display for TagType {
 #[derive(Debug, Clone)]
 pub enum TagMessage {
     ExpandTag(bool),
-    SelectTag(Option<String>, TagType),
+    SelectTag(Option<String>, Tag),
     EditTag {
         name: Option<String>,
         value: Option<TagType>
@@ -81,6 +97,10 @@ impl Default for Tag {
 impl Tag {
     pub fn get(&self) -> &TagType {
         &self.tag
+    }
+
+    pub fn id(&self) -> usize {
+        self.id
     }
 
     pub fn name(&self) -> Option<&String> {
@@ -172,7 +192,7 @@ impl Tag {
                     })
                 )
                 .push(Button::new(if let Some(s) = self.name.as_ref() { s.as_str() } else { "(empty)" } )
-                    .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.tag.clone())))
+                    .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.clone())))
                 )
             );
     

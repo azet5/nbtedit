@@ -74,36 +74,28 @@ pub fn btn_centered<'a>(text: impl Into<Cow<'a, str>>, width: impl Into<Length>)
     Button::new(Text::new(text).horizontal_alignment(Horizontal::Center)).padding(4).width(width)
 }
 
-fn btn_to_path<'a>(path: impl Into<String>, label: impl Into<Cow<'a, str>>) -> Button<'a, AppMessage> {
-    btn_centered(label, 100).on_press(AppMessage::ChangeOpenPath(path.into()))
-}
-
-fn btn_to_save<'a>(path: impl Into<String>, label: impl Into<Cow<'a, str>>) -> Button<'a, AppMessage> {
-    Button::new(Text::new(label)).on_press(AppMessage::OpenDirectory(path.into()))
-}
-
-pub fn default_paths<'a>() -> Column<'a, AppMessage> {
-    #[cfg(target_family = "unix")]
-    {
-        Column::new()
-            .push(btn_to_path(std::env::var("HOME").unwrap_or("~/".to_string()), "home"))
-            .push(btn_to_path(if let Ok(s) = std::env::var("HOME") {
-                format!("{}/.local/share", s)
-            } else {
-                "~/.local/share".to_string()
-            }, "share"))
-            .padding(4).spacing(4)
-    }
-    #[cfg(target_os = "windows")]
-    {
-        Column::new()
-        .push(btn_to_path("%userprofile%", "home"))
-        .push(btn_to_path("%appdata%", "share"))
-    }
-}
+// pub fn default_paths<'a>() -> Column<'a, AppMessage> {
+//     #[cfg(target_family = "unix")]
+//     {
+//         Column::new()
+//             .push(btn_to_path(std::env::var("HOME").unwrap_or("~/".to_string()), "home"))
+//             .push(btn_to_path(if let Ok(s) = std::env::var("HOME") {
+//                 format!("{}/.local/share", s)
+//             } else {
+//                 "~/.local/share".to_string()
+//             }, "share"))
+//             .padding(4).spacing(4)
+//     }
+//     #[cfg(target_os = "windows")]
+//     {
+//         Column::new()
+//         .push(btn_to_path("%userprofile%", "home"))
+//         .push(btn_to_path("%appdata%", "share"))
+//     }
+// }
 
 // TODO: more reliable check
-fn is_mc_save(path: &Path) -> bool {
+pub fn is_mc_save(path: impl AsRef<Path>) -> bool {
     if let Ok(mut dir) = std::fs::read_dir(path) {
         dir.find(|p| p.as_ref().unwrap().file_name() == OsString::from("level.dat")).is_some()
     } else {
@@ -111,7 +103,7 @@ fn is_mc_save(path: &Path) -> bool {
     }
 }
 
-fn list_dir(path: &Path) -> Result<Vec<(String, String)>, String> {
+fn list_dir(path: impl AsRef<Path>) -> Result<Vec<(String, String)>, String> {
     match std::fs::read_dir(path) {
         Ok(dir) => {
             let mut data = Vec::new();
@@ -134,19 +126,22 @@ fn list_dir(path: &Path) -> Result<Vec<(String, String)>, String> {
     }
 }
 
-pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + std::convert::AsRef<std::path::Path>) -> Column<'a, AppMessage> {
+pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> Column<'a, AppMessage> {
     let mut list = Column::new().padding(4).spacing(4);
+    list = list.push(Text::new(path.clone()));
     if path.as_ref() != Path::new("/") {
-        list = list.push(btn_to_path(path.as_ref().parent().unwrap().to_str().unwrap(), "..").width(Length::Fill))
+        list = list.push(btn_centered("..", Length::Fill).on_press(AppMessage::CheckPath(path.as_ref().parent().unwrap().to_str().unwrap().to_string())));
     }
     match list_dir(path.as_ref()) {
         Ok(data) => {
             for entry in data {
-                if is_mc_save(&Path::new(&entry.1)) {
-                    list = list.push(btn_to_save(entry.1, entry.0).width(Length::Fill).style(iced::theme::Button::Positive));
-                } else {
-                    list = list.push(btn_to_path(entry.1, entry.0).width(Length::Fill));
-                }
+                list = list.push(btn_centered(entry.0.clone(), Length::Fill).style(
+                    if is_mc_save(&Path::new(&entry.1)) {
+                        iced::theme::Button::Positive
+                    } else {
+                        iced::theme::Button::Primary
+                    }
+                ).on_press(AppMessage::CheckPath(entry.1)));
             }
         },
         Err(_) => {
