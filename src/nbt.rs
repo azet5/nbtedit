@@ -1,7 +1,7 @@
 use std::{fmt::{Display, Formatter}, fs::File, io::Read, path::Path, slice::Iter};
 
 use flate2::read::GzDecoder;
-use iced::widget::{Column, Row, Button};
+use iced::{alignment::Horizontal, widget::{Button, Column, Row, Text}, Length};
 
 use crate::AppMessage;
 
@@ -181,7 +181,10 @@ impl Tag {
         let mut column = Column::new().padding([0, 12]);
         if !self.hidden {
             column = column.push(Row::new()
-                .push(Button::new(if self.expanded { "-" } else { "+" })
+                .push(Button::new(
+                        Text::new(if self.expanded { "-" } else { "+" })
+                        .horizontal_alignment(Horizontal::Center))
+                    .width(Length::Fixed(25.0))
                     .on_press_maybe(match self.tag {
                         TagType::Compound(_) |
                         TagType::List(_) |
