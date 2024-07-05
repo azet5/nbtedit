@@ -3,7 +3,7 @@ mod nbt;
 mod queue;
 
 use helpers::{btn_centered, dir_buttons, is_mc_save, labeled_element, TagChoice};
-use iced::{Sandbox, Settings, window::{self, PlatformSpecific}, widget::{Button, Space, Row, Column, Container, Scrollable, TextInput, Text, PickList}, Length, Alignment};
+use iced::{widget::{Button, Column, Container, PickList, Row, Rule, Scrollable, Space, Text, TextInput}, window::{self, PlatformSpecific}, Alignment, Length, Sandbox, Settings};
 use nbt::{NbtFile, Tag, TagMessage, TagType};
 use queue::{ActionQueue, ActionType};
 
@@ -149,13 +149,17 @@ impl NbtEdit {
         }
 
         Column::new()
-            .push(Text::new(format!("{} action(s)", self.queue.length())))
             .push(Row::new()
+                .push(Button::new("Apply"))
+                .push(Text::new(format!("{} action(s)", self.queue.length())))
+                .padding(4)
+                .spacing(4)
+                .align_items(Alignment::Center)
+            ).push(Row::new()
                 .push(Scrollable::new(buttons).width(Length::FillPortion(2)))
                 .push(options)
                 .height(Length::Fill)
-            ).push(Button::new("Apply"))
-            .padding(4)
+            ).padding(4)
             .spacing(4)
             .into()
     }
@@ -349,14 +353,16 @@ impl Sandbox for NbtEdit {
             .push(Row::new()
                 .push(Screen::Open.create_btn())
                 .push(Screen::Save.create_btn())
-                .push(Screen::Edit.create_btn()))
-            .push(Space::new(Length::Fill, Length::Shrink))
+                .push(Screen::Edit.create_btn())
+                .spacing(2)
+            ).push(Space::new(Length::Fill, Length::Shrink))
             .push(Row::new()
                 .push(Screen::Settings.create_btn())
                 .push(Screen::Help.create_btn())
-            ).spacing(4)
-            .padding(4)
-        ).push(Container::new(match self.screen {
+                .spacing(2)
+            ).padding(4)
+        ).push(Rule::horizontal(1))
+        .push(Container::new(match self.screen {
             Screen::Welcome => self.welcome(),
             Screen::Open => self.open(),
             Screen::Save => self.save(),
