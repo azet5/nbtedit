@@ -40,6 +40,17 @@ impl TagType {
             TagType::LongArray(_) => "TAG_LongArray".to_string(),
         }
     }
+
+    pub fn is_compound(&self) -> bool {
+        match self {
+            TagType::ByteArray(_) |
+            TagType::List(_) |
+            TagType::Compound(_) |
+            TagType::IntArray(_) |
+            TagType::LongArray(_) => true,
+            _ => false,
+        }
+    }
 }
 
 impl Display for TagType {
@@ -53,7 +64,11 @@ impl Display for TagType {
             TagType::Float(x) => x.to_string(),
             TagType::Double(x) => x.to_string(),
             TagType::String(x) => x.to_string(),
-            _ => unreachable!("compound types should never be stringified")
+            TagType::ByteArray(x) => format!("{} item(s)", x.len()),
+            TagType::List(x) => format!("{} item(s)", x.len()),
+            TagType::Compound(x) => format!("{} item(s)", x.len()),
+            TagType::IntArray(x) => format!("{} item(s)", x.len()),
+            TagType::LongArray(x) => format!("{} item(s)", x.len()),
         })
     }
 }
