@@ -35,7 +35,7 @@ impl TagType {
             TagType::ByteArray(_) => "TAG_ByteArray".to_string(),
             TagType::String(_) => "TAG_String".to_string(),
             TagType::List(_) => "TAG_List".to_string(),
-            TagType::Compound(_) => "TAG_Compund".to_string(),
+            TagType::Compound(_) => "TAG_Compound".to_string(),
             TagType::IntArray(_) => "TAG_IntArray".to_string(),
             TagType::LongArray(_) => "TAG_LongArray".to_string(),
         }

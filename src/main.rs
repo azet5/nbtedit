@@ -142,7 +142,8 @@ impl NbtEdit {
                 }
                 ActionType::Delete(id) => {
                     let tag = self.level_dat.as_ref().unwrap().get_tag().find(*id).unwrap();
-                    options = options.push(labeled_element("type", Text::new(format!("{}", tag.get())).into()));
+                    options = options.push(labeled_element("Type:", Text::new(tag.get().type_name()).into()));
+                    options = options.push(labeled_element("Value:", Text::new(tag.get().to_string()).into()));
                 },
             }
         }
