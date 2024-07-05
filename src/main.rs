@@ -3,7 +3,7 @@ mod nbt;
 mod queue;
 
 use helpers::{btn_centered, dir_buttons, is_mc_save, labeled_element, TagChoice};
-use iced::{widget::{Button, Column, Container, PickList, Row, Rule, Scrollable, Space, Text, TextInput}, window::{self, PlatformSpecific}, Alignment, Length, Sandbox, Settings};
+use iced::{widget::{Button, Column, Container, PickList, Row, Rule, Scrollable, Space, Text, TextInput}, window::{self, settings::PlatformSpecific}, Alignment, Length, Sandbox, Settings, Size};
 use nbt::{NbtFile, Tag, TagMessage, TagType};
 use queue::{ActionQueue, ActionType};
 
@@ -378,8 +378,8 @@ impl Sandbox for NbtEdit {
 fn main() -> iced::Result {
     NbtEdit::run(Settings {
         window: window::Settings {
-            size: (800, 600),
-            min_size: Some((800, 600)),
+            size: Size::new(800.0, 600.0),
+            min_size: Some(Size::new(800.0, 600.0)),
             platform_specific: PlatformSpecific {
                 application_id: format!("{}", "CARGO_PKG_NAME")
             },

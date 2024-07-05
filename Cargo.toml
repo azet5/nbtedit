@@ -7,4 +7,4 @@ edition = "2021"
 
 [dependencies]
 flate2 = "1.0.27"
-iced = { version = "0.10.0", features = ["lazy"] }
+iced = { version = "0.12.1", features = ["lazy"] }
