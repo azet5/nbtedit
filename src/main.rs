@@ -30,9 +30,9 @@ pub enum Screen {
     Help,
 }
 
-impl Screen {
-    fn create_btn<'a>(&self) -> Button<'a, AppMessage> {
-        let text = match self {
+impl NbtEdit {
+    fn create_btn<'a>(&self, screen: Screen) -> Button<'a, AppMessage> {
+        let text = match screen {
             Screen::Welcome => unreachable!("this button does not exist"),
             Screen::Open => "Open",
             Screen::Save => "Save",
@@ -40,7 +40,14 @@ impl Screen {
             Screen::Settings => "Settings",
             Screen::Help => "Help",
         };
-        btn_centered(text, Length::Fixed(70.0)).on_press(AppMessage::ChangeScreen(self.clone()))
+
+        match screen {
+            Screen::Edit => btn_centered(text, Length::Fixed(70.0))
+                .on_press_maybe(if self.level_dat.is_some() {
+                    Some(AppMessage::ChangeScreen(screen))
+                } else { None }),
+            _ => btn_centered(text, Length::Fixed(70.0)).on_press(AppMessage::ChangeScreen(screen))
+        }
     }
 }
 
@@ -55,6 +62,7 @@ pub enum AppMessage {
     InputTagName(String),
     InputTagValue(TagChoice),
     InputAction(ActionType),
+    Write,
     Pass,
 }
 
@@ -150,7 +158,9 @@ impl NbtEdit {
 
         Column::new()
             .push(Row::new()
-                .push(Button::new("Apply"))
+                .push(Button::new("Apply").on_press_maybe(if self.queue.length() > 0 {
+                    Some(AppMessage::Write)
+                } else { None }))
                 .push(Text::new(format!("{} action(s)", self.queue.length())))
                 .padding(4)
                 .spacing(4)
@@ -307,6 +317,7 @@ impl Sandbox for NbtEdit {
                 if is_mc_save(&path) {
                     self.screen = Screen::Edit;
                     self.level_dat = Some(NbtFile::open(format!("{}/level.dat", path)).unwrap());
+                    self.path = format!("{}/level.dat", path);
                 } else {
                     self.path = path;
                 }
@@ -343,6 +354,9 @@ impl Sandbox for NbtEdit {
                 self.create_screen = tag;
             },
             AppMessage::InputAction(action) => self.selected_action = Some(action),
+            AppMessage::Write => {
+                self.level_dat.as_mut().unwrap().write(self.path.clone()).unwrap();
+            },
             AppMessage::Pass => {},
         }
     }
@@ -351,14 +365,14 @@ impl Sandbox for NbtEdit {
         Column::new()
         .push(Row::new()
             .push(Row::new()
-                .push(Screen::Open.create_btn())
-                .push(Screen::Save.create_btn())
-                .push(Screen::Edit.create_btn())
+                .push(self.create_btn(Screen::Open))
+                .push(self.create_btn(Screen::Save))
+                .push(self.create_btn(Screen::Edit))
                 .spacing(2)
             ).push(Space::new(Length::Fill, Length::Shrink))
             .push(Row::new()
-                .push(Screen::Settings.create_btn())
-                .push(Screen::Help.create_btn())
+                .push(self.create_btn(Screen::Settings))
+                .push(self.create_btn(Screen::Help))
                 .spacing(2)
             ).padding(4)
         ).push(Rule::horizontal(1))

@@ -1,4 +1,4 @@
-use std::{fmt::{Display, Formatter}, fs::File, io::Read, path::Path, slice::Iter};
+use std::{fmt::{Display, Formatter}, fs::File, io::{Read, Write}, path::Path, slice::Iter};
 
 use flate2::read::GzDecoder;
 use iced::{alignment::Horizontal, widget::{Button, Column, Row, Text}, Length};
@@ -38,6 +38,24 @@ impl TagType {
             TagType::Compound(_) => "TAG_Compound".to_string(),
             TagType::IntArray(_) => "TAG_IntArray".to_string(),
             TagType::LongArray(_) => "TAG_LongArray".to_string(),
+        }
+    }
+
+    pub fn tag_id(&self) -> u8 {
+        match self {
+            TagType::End => 0x00,
+            TagType::Byte(_) => 0x01,
+            TagType::Short(_) => 0x02,
+            TagType::Int(_) => 0x03,
+            TagType::Long(_) => 0x04,
+            TagType::Float(_) => 0x05,
+            TagType::Double(_) => 0x06,
+            TagType::ByteArray(_) => 0x07,
+            TagType::String(_) => 0x08,
+            TagType::List(_) => 0x09,
+            TagType::Compound(_) => 0x0a,
+            TagType::IntArray(_) => 0x0b,
+            TagType::LongArray(_) => 0x0c,
         }
     }
 
@@ -501,6 +519,128 @@ impl<'a> ParserData<'a> {
 
 }
 
+impl Tag {
+    fn write_to_bytes(&self, buf: &mut Vec<u8>) -> Vec<u8> {
+        buf.push(self.tag.tag_id());
+        if let Some(name) = &self.name {
+            Self::push_tag_name(buf, name.clone());
+        }
+        match self.tag {
+            TagType::End => {},
+            TagType::Byte(b) => Self::push_byte(buf, b),
+            TagType::Short(s) => Self::push_short(buf, s),
+            TagType::Int(i) => Self::push_int(buf, i),
+            TagType::Long(l) => Self::push_long(buf, l),
+            TagType::Float(f) => Self::push_float(buf, f),
+            TagType::Double(d) => Self::push_double(buf, d),
+            TagType::ByteArray(ref vec) => Self::push_byte_array(buf, &vec),
+            TagType::String(ref str) => Self::push_string(buf, str),
+            TagType::List(ref vec) => Self::push_list(buf, &vec),
+            TagType::Compound(ref vec) => Self::push_compound(buf, &vec),
+            TagType::IntArray(ref vec) => Self::push_int_array(buf, &vec),
+            TagType::LongArray(ref vec) => Self::push_long_array(buf, &vec),
+        }
+
+        buf.clone()
+    }
+
+    fn push_tag_name(buf: &mut Vec<u8>, name: String) {
+        let len = name.len() as u16;
+        let len = len.to_be_bytes();
+
+        buf.push(len[0]);
+        buf.push(len[1]);
+        buf.extend_from_slice(name.as_bytes());
+    }
+
+    fn push_end(buf: &mut Vec<u8>) {
+        // buf.push(0x00);
+    }
+
+    fn push_byte(buf: &mut Vec<u8>, value: i8) {
+        // buf.push(0x01);
+        buf.push(value.to_be_bytes()[0]);
+    }
+
+    fn push_short(buf: &mut Vec<u8>, value: i16) {
+        let bytes = value.to_be_bytes();
+        // buf.push(0x02);
+        for b in bytes { buf.push(b) }
+    }
+
+    fn push_int(buf: &mut Vec<u8>, value: i32) {
+        let bytes = value.to_be_bytes();
+        // buf.push(0x03);
+        for b in bytes { buf.push(b) }
+    }
+
+    fn push_long(buf: &mut Vec<u8>, value: i64) {
+        let bytes = value.to_be_bytes();
+        // buf.push(0x04);
+        for b in bytes { buf.push(b) }
+    }
+
+    fn push_float(buf: &mut Vec<u8>, value: f32) {
+        let bytes = value.to_be_bytes();
+        // buf.push(0x05);
+        for b in bytes { buf.push(b) }
+    }
+
+    fn push_double(buf: &mut Vec<u8>, value: f64) {
+        let bytes = value.to_be_bytes();
+        // buf.push(0x06);
+        for b in bytes { buf.push(b) }
+    }
+
+    fn push_byte_array(buf: &mut Vec<u8>, value: &Vec<i8>) {
+        // buf.push(0x07);
+        buf.push(value.len() as u8);
+        for i in value {
+            buf.push(*i as u8);
+        }
+    }
+
+    fn push_string(buf: &mut Vec<u8>, value: &String) {
+        // buf.push(0x08);
+        buf.push(value.len() as u8);
+        buf.extend_from_slice(value.as_bytes());
+    }
+
+    fn push_list(buf: &mut Vec<u8>, value: &Vec<Tag>) {
+        // buf.push(0x09);
+        buf.push(value.len() as u8);
+        for i in value {
+            i.write_to_bytes(buf);
+        }
+    }
+
+    fn push_compound(buf: &mut Vec<u8>, value: &Vec<Tag>) {
+        // buf.push(0x0a);
+        buf.push(value.len() as u8);
+        for i in value {
+            i.write_to_bytes(buf);
+        }
+    }
+    fn push_int_array(buf: &mut Vec<u8>, value: &Vec<i32>) {
+        // buf.push(0x0b);
+        buf.push(value.len() as u8);
+        for i in value {
+            for b in i.to_be_bytes() {
+                buf.push(b)
+            }
+        }
+    }
+    fn push_long_array(buf: &mut Vec<u8>, value: &Vec<i64>) {
+        // buf.push(0x0c);
+        buf.push(value.len() as u8);
+        for i in value {
+            for b in i.to_be_bytes() {
+                buf.push(b)
+            }
+        }
+    }
+}
+
 impl NbtFile {
     pub fn open(path: impl AsRef<Path>) -> Result<NbtFile, ParseError> {
         match File::open(path) {
@@ -513,5 +653,9 @@ impl NbtFile {
             },
             Err(e) => Err(ParseError::IOError(e.to_string())),
         }
+    }
+
+    pub fn write(&mut self, path: impl AsRef<Path>) -> Result<usize, std::io::Error> {
+        Ok(File::create(path)?.write(self.0.write_to_bytes(&mut Vec::new()).as_slice())?)
     }
 }
