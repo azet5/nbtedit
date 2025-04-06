@@ -615,7 +615,9 @@ impl Tag {
     }
 
     fn push_list(buf: &mut Vec<u8>, value: &Vec<Tag>) {
-        buf.push(value.get(0).unwrap().tag.tag_id());
+        // TODO: refactor TagType::List to contain info about stored tag if list is empty
+        // for now this call always gives TAG_End type for empty lists
+        buf.push(value.get(0).unwrap_or(&Tag::default()).tag.tag_id());
         let len = (value.len() as u32).to_be_bytes();
         buf.push(len[0]);
         buf.push(len[1]);
