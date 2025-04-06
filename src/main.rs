@@ -202,20 +202,14 @@ impl NbtEdit {
             screen = screen.push(Space::with_height(20));
             let mut row = Row::new().spacing(4)
                 .push(btn_centered("Apply", 100)
-                    .on_press(AppMessage::TagEvent(t.id(), TagMessage::EditTag {
-                        name: t.name().cloned(),
-                        // value: Some(match t.get() {
-                        //     TagType::Byte(_) => TagType::Byte(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     TagType::Short(_) => TagType::Short(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     TagType::Int(_) => TagType::Int(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     TagType::Long(_) => TagType::Long(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     TagType::Float(_) => TagType::Float(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     TagType::Double(_) => TagType::Double(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     TagType::String(_) => TagType::String(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                        //     _ => t.get().clone(),
-                        // }),
-                        value: Some(t.get().replace(&self.temp_value)),
-                    }))
+                    .on_press_maybe(if t.get().is_compound() {
+                            None
+                        } else {
+                            Some(AppMessage::TagEvent(t.id(), TagMessage::EditTag {
+                                name: t.name().cloned(),
+                                value: Some(t.get().replace(&self.temp_value)),
+                            }))
+                        })
                     // .on_press_maybe(None)
                 );
             if let TagType::Compound(_) = t.get() {

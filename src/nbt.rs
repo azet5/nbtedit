@@ -567,77 +567,76 @@ impl Tag {
         buf.extend_from_slice(name.as_bytes());
     }
 
-    fn push_end(buf: &mut Vec<u8>) {
-        // buf.push(0x00);
-    }
-
     fn push_byte(buf: &mut Vec<u8>, value: i8) {
-        // buf.push(0x01);
         buf.push(value.to_be_bytes()[0]);
     }
 
     fn push_short(buf: &mut Vec<u8>, value: i16) {
         let bytes = value.to_be_bytes();
-        // buf.push(0x02);
         for b in bytes { buf.push(b) }
     }
 
     fn push_int(buf: &mut Vec<u8>, value: i32) {
         let bytes = value.to_be_bytes();
-        // buf.push(0x03);
         for b in bytes { buf.push(b) }
     }
 
     fn push_long(buf: &mut Vec<u8>, value: i64) {
         let bytes = value.to_be_bytes();
-        // buf.push(0x04);
         for b in bytes { buf.push(b) }
     }
 
     fn push_float(buf: &mut Vec<u8>, value: f32) {
         let bytes = value.to_be_bytes();
-        // buf.push(0x05);
         for b in bytes { buf.push(b) }
     }
 
     fn push_double(buf: &mut Vec<u8>, value: f64) {
         let bytes = value.to_be_bytes();
-        // buf.push(0x06);
         for b in bytes { buf.push(b) }
     }
 
     fn push_byte_array(buf: &mut Vec<u8>, value: &Vec<i8>) {
-        // buf.push(0x07);
-        buf.push(value.len() as u8);
+        let len = (value.len() as u32).to_be_bytes();
+        buf.push(len[0]);
+        buf.push(len[1]);
+        buf.push(len[2]);
+        buf.push(len[3]);
         for i in value {
             buf.push(*i as u8);
         }
     }
 
     fn push_string(buf: &mut Vec<u8>, value: &String) {
-        // buf.push(0x08);
-        buf.push(value.len() as u8);
+        let len = (value.len() as u16).to_be_bytes();
+        buf.push(len[0]);
+        buf.push(len[1]);
         buf.extend_from_slice(value.as_bytes());
     }
 
     fn push_list(buf: &mut Vec<u8>, value: &Vec<Tag>) {
-        // buf.push(0x09);
-        buf.push(value.len() as u8);
+        buf.push(value.get(0).unwrap().tag.tag_id());
+        let len = (value.len() as u32).to_be_bytes();
+        buf.push(len[0]);
+        buf.push(len[1]);
+        buf.push(len[2]);
+        buf.push(len[3]);
         for i in value {
             i.write_to_bytes(buf);
         }
     }
 
     fn push_compound(buf: &mut Vec<u8>, value: &Vec<Tag>) {
-        // buf.push(0x0a);
-        buf.push(value.len() as u8);
         for i in value {
             i.write_to_bytes(buf);
         }
     }
     fn push_int_array(buf: &mut Vec<u8>, value: &Vec<i32>) {
-        // buf.push(0x0b);
-        buf.push(value.len() as u8);
+        let len = (value.len() as u32).to_be_bytes();
+        buf.push(len[0]);
+        buf.push(len[1]);
+        buf.push(len[2]);
+        buf.push(len[3]);
         for i in value {
             for b in i.to_be_bytes() {
                 buf.push(b)
@@ -645,8 +644,11 @@ impl Tag {
         }
     }
     fn push_long_array(buf: &mut Vec<u8>, value: &Vec<i64>) {
-        // buf.push(0x0c);
-        buf.push(value.len() as u8);
+        let len = (value.len() as u32).to_be_bytes();
+        buf.push(len[0]);
+        buf.push(len[1]);
+        buf.push(len[2]);
+        buf.push(len[3]);
         for i in value {
             for b in i.to_be_bytes() {
                 buf.push(b)
