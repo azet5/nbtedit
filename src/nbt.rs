@@ -1,6 +1,6 @@
-use std::{fmt::{Display, Formatter}, fs::File, io::{Read, Write}, path::Path, slice::Iter};
+use std::{fmt::{Display, Formatter}, fs::File, io::{Read, Write}, path::Path, slice::Iter, str::FromStr};
 
-use flate2::read::GzDecoder;
+use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use iced::{alignment::Horizontal, widget::{Button, Column, Row, Text}, Length};
 
 use crate::AppMessage;
@@ -67,6 +67,20 @@ impl TagType {
             TagType::IntArray(_) |
             TagType::LongArray(_) => true,
             _ => false,
+        }
+    }
+
+    pub fn replace(&self, str: &String) -> Self {
+        match self {
+            TagType::End => self.clone(),
+            TagType::Byte(_) => TagType::Byte(str.parse().unwrap()),
+            TagType::Short(_) => TagType::Short(str.parse().unwrap()),
+            TagType::Int(_) => TagType::Int(str.parse().unwrap()),
+            TagType::Long(_) => TagType::Long(str.parse().unwrap()),
+            TagType::Float(_) => TagType::Float(str.parse().unwrap()),
+            TagType::Double(_) => TagType::Double(str.parse().unwrap()),
+            TagType::String(_) => TagType::String(str.clone()),
+            _ => unreachable!("cannot directly edit compound types' values"),
         }
     }
 }
@@ -656,6 +670,10 @@ impl NbtFile {
     }
 
     pub fn write(&mut self, path: impl AsRef<Path>) -> Result<usize, std::io::Error> {
-        Ok(File::create(path)?.write(self.0.write_to_bytes(&mut Vec::new()).as_slice())?)
+        let buf = Vec::new();
+        let mut encoder = GzEncoder::new(buf, Compression::default());
+        encoder.write_all(self.0.write_to_bytes(&mut Vec::new()).as_slice())?;
+        let buf = encoder.finish()?;
+        Ok(File::create(path)?.write(buf.as_slice())?)
     }
 }

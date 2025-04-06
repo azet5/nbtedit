@@ -183,7 +183,8 @@ impl NbtEdit {
                 screen = screen.push(labeled_element(
                     "Key",
                     TextInput::new("", &self.temp_name)
-                        .on_input(AppMessage::InputName).into()
+                        // .on_input(AppMessage::InputName)
+                        .into()
                 ));
             }
     
@@ -201,21 +202,21 @@ impl NbtEdit {
             screen = screen.push(Space::with_height(20));
             let mut row = Row::new().spacing(4)
                 .push(btn_centered("Apply", 100)
-                    // .on_press(AppMessage::TagEvent(t.id(), TagMessage::EditTag {
-                    //     name: t.name().cloned(),
-                    //     // value: Some(match t.get() {
-                    //     //     TagType::Byte(_) => TagType::Byte(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     TagType::Short(_) => TagType::Short(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     TagType::Int(_) => TagType::Int(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     TagType::Long(_) => TagType::Long(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     TagType::Float(_) => TagType::Float(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     TagType::Double(_) => TagType::Double(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     TagType::String(_) => TagType::String(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
-                    //     //     _ => t.get().clone(),
-                    //     // }),
-                    //     value: Some(t.get().clone()),
-                    // }))
-                    .on_press_maybe(None)
+                    .on_press(AppMessage::TagEvent(t.id(), TagMessage::EditTag {
+                        name: t.name().cloned(),
+                        // value: Some(match t.get() {
+                        //     TagType::Byte(_) => TagType::Byte(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     TagType::Short(_) => TagType::Short(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     TagType::Int(_) => TagType::Int(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     TagType::Long(_) => TagType::Long(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     TagType::Float(_) => TagType::Float(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     TagType::Double(_) => TagType::Double(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     TagType::String(_) => TagType::String(self.selected_value.as_ref().unwrap().parse().unwrap_or_default()),
+                        //     _ => t.get().clone(),
+                        // }),
+                        value: Some(t.get().replace(&self.temp_value)),
+                    }))
+                    // .on_press_maybe(None)
                 );
             if let TagType::Compound(_) = t.get() {
                 row = row.push(btn_centered("Insert Tag", 100).on_press(AppMessage::ToggleCreate(ToggleCreateMode::Tag)));
@@ -335,14 +336,14 @@ impl Sandbox for NbtEdit {
             },
             AppMessage::InputName(name) => self.temp_name = name,
             AppMessage::InputValue(value) => self.temp_value = value,
-            // AppMessage::TagEvent(id, ref e @ TagMessage::EditTag { .. }) => {
-            //     self.queue.add(ActionType::Edit {
-            //         id,
-            //         old_name: self.selected_name.as_ref().unwrap().clone(),
-            //         old_value: self.selected_tag.as_ref().unwrap().clone(),
-            //     });
-            //     self.level_dat.as_mut().unwrap().get_mut_tag().find_mut(id).unwrap().update(e.clone());
-            // },
+            AppMessage::TagEvent(id, ref e @ TagMessage::EditTag { .. }) => {
+                self.queue.add(ActionType::Edit {
+                    id,
+                    old_name: self.selected_tag.as_ref().unwrap().name().as_ref().unwrap().to_string(),
+                    old_value: self.selected_tag.as_ref().unwrap().get().clone(),
+                });
+                self.level_dat.as_mut().unwrap().get_mut_tag().find_mut(id).unwrap().update(e.clone());
+            },
             AppMessage::TagEvent(id, msg) => self.level_dat.as_mut().unwrap().get_mut_tag().find_mut(id).unwrap().update(msg),
             AppMessage::InputTagName(name) => self.create_data.as_mut().unwrap().name = name,
             AppMessage::InputTagValue(value) => self.create_data.as_mut().unwrap().tag = value,
