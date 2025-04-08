@@ -534,11 +534,15 @@ impl<'a> ParserData<'a> {
 }
 
 impl Tag {
-    fn write_to_bytes(&self, buf: &mut Vec<u8>) -> Vec<u8> {
-        buf.push(self.tag.tag_id());
+    fn write_to_bytes(&self, buf: &mut Vec<u8>, with_type: bool) -> Vec<u8> {
+        if with_type {
+            buf.push(self.tag.tag_id());
+        }
+
         if let Some(name) = &self.name {
             Self::push_tag_name(buf, name.clone());
         }
+
         match self.tag {
             TagType::End => {},
             TagType::Byte(b) => Self::push_byte(buf, b),
@@ -624,14 +628,15 @@ impl Tag {
         buf.push(len[2]);
         buf.push(len[3]);
         for i in value {
-            i.write_to_bytes(buf);
+            i.write_to_bytes(buf, false);
         }
     }
 
     fn push_compound(buf: &mut Vec<u8>, value: &Vec<Tag>) {
         for i in value {
-            i.write_to_bytes(buf);
+            i.write_to_bytes(buf, true);
         }
+        buf.push(0x00);
     }
     fn push_int_array(buf: &mut Vec<u8>, value: &Vec<i32>) {
         let len = (value.len() as u32).to_be_bytes();
@@ -676,7 +681,7 @@ impl NbtFile {
     pub fn write(&mut self, path: impl AsRef<Path>) -> Result<usize, std::io::Error> {
         let buf = Vec::new();
         let mut encoder = GzEncoder::new(buf, Compression::default());
-        encoder.write_all(self.0.write_to_bytes(&mut Vec::new()).as_slice())?;
+        encoder.write_all(self.0.write_to_bytes(&mut Vec::new(), true).as_slice())?;
         let buf = encoder.finish()?;
         Ok(File::create(path)?.write(buf.as_slice())?)
     }
