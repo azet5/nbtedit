@@ -389,6 +389,7 @@ fn main() -> iced::Result {
         window: window::Settings {
             size: Size::new(800.0, 600.0),
             min_size: Some(Size::new(800.0, 600.0)),
+            #[cfg(target_os = "linux")]
             platform_specific: PlatformSpecific {
                 application_id: format!("{}", "CARGO_PKG_NAME")
             },
