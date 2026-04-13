@@ -286,7 +286,7 @@ pub enum ParseError {
     IOError(String),
 }
 
-struct ParserData<'a> {
+pub struct ParserData<'a> {
     bytes: Iter<'a, u8>,
     max_id: usize,
 }
@@ -519,7 +519,7 @@ impl<'a> ParserData<'a> {
         }
     }
 
-    fn parse(&mut self) -> Result<NbtFile, ParseError> {
+    pub fn parse(&mut self) -> Result<NbtFile, ParseError> {
         if self.get_type()? == 0x0a {
             Ok(NbtFile(Tag {
                 name: Some(self.read_utf8_string()?),
