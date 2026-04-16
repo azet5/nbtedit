@@ -9,7 +9,7 @@ impl Screen for WelcomeScreen {
         Column::new()
             .push(Space::new(Length::Fill, Length::Fill))
             .push("Welcome!")
-            .push("To start editing, open a directory with Minecraft save.")
+            .push("To start editing, please open an NBT file.")
             .push(Space::new(Length::Fill, Length::Fill))
             .align_items(Alignment::Center)
             .into()
