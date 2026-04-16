@@ -258,6 +258,24 @@ impl Tag {
                         column = column.push(tag.view());
                     }
                 }
+            } else if let TagType::ByteArray(array) = &self.tag {
+                if self.expanded {
+                    for i in 0..array.len() {
+                        column = column.push(Text::new(format!("[{}]: {}", i, array[i])));
+                    }
+                }
+            } else if let TagType::IntArray(array) = &self.tag {
+                if self.expanded {
+                    for i in 0..array.len() {
+                        column = column.push(Text::new(format!("[{}]: {}", i, array[i])));
+                    }
+                }
+            } else if let TagType::LongArray(array) = &self.tag {
+                if self.expanded {
+                    for i in 0..array.len() {
+                        column = column.push(Text::new(format!("[{}]: {}", i, array[i])));
+                    }
+                }
             }
         }
 
