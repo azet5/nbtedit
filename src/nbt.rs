@@ -1,4 +1,4 @@
-use std::{fmt::{Display, Formatter}, fs::File, io::{Read, Write}, path::Path, slice::Iter, str::FromStr};
+use std::{fmt::{Display, Formatter}, fs::File, io::{ErrorKind, Read, Write}, path::Path, slice::Iter};
 
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use iced::{alignment::Horizontal, widget::{Button, Column, Row, Text}, Length};
@@ -666,10 +666,24 @@ impl Tag {
 
 impl NbtFile {
     pub fn open(path: impl AsRef<Path>) -> Result<NbtFile, ParseError> {
-        match File::open(path) {
-            Ok(file) => {
+        'gz: {
+            if let Ok(file) = File::open(&path) {
                 let mut buf = Vec::new();
                 match GzDecoder::new(file).read_to_end(&mut buf) {
+                    Ok(_) => return ParserData::from(&buf).parse(),
+                    Err(e) => if e.kind() == ErrorKind::InvalidInput {
+                        break 'gz;
+                    } else {
+                        return Err(ParseError::IOError(e.to_string()));
+                    },
+                }
+            }
+        }
+
+        match File::open(path) {
+            Ok(mut file) => {
+                let mut buf = Vec::new();
+                match file.read_to_end(&mut buf) {
                     Ok(_) => ParserData::from(&buf).parse(),
                     Err(e) => Err(ParseError::IOError(e.to_string())),
                 }
