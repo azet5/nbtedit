@@ -187,13 +187,17 @@ pub fn is_mc_save(path: impl AsRef<Path>) -> bool {
     false
 }
 
-fn list_dir(path: impl AsRef<Path>) -> Result<Vec<(String, String)>, String> {
+fn list_dir(path: impl AsRef<Path>, show_hidden: bool) -> Result<Vec<(String, String)>, String> {
     match std::fs::read_dir(path) {
         Ok(dir) => {
             let mut data = Vec::new();
             for i in dir {
                 match i {
                     Ok(dir) => {
+                        #[cfg(target_os = "windows")]
+                        if !show_hidden && dir.metadata().unwrap().file_attributes() & 2 != 0 { continue; }
+                        #[cfg(target_family = "unix")]
+                        if !show_hidden && dir.file_name().to_string_lossy().starts_with(".") { continue; }
                         let name = dir.file_name();
                         let name = name.to_string_lossy();
                         if dir.file_type().unwrap().is_dir() ||
@@ -220,7 +224,7 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> C
     if path.as_ref() != Path::new("/") {
         list = list.push(btn_centered("..", Length::Fill).on_press(AppMessage::TryOpenFile(path.as_ref().parent().unwrap().to_str().unwrap().to_string())));
     }
-    match list_dir(path.as_ref()) {
+    match list_dir(path.as_ref(), false) {
         Ok(data) => {
             for entry in data {
                 list = list.push(btn_centered(entry.0.clone(), Length::Fill).style(
