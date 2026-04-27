@@ -14,4 +14,8 @@ impl Screen for WelcomeScreen {
             .align_items(Alignment::Center)
             .into()
     }
+
+    fn get_type<'a>(&'a self) -> super::ScreenTy {
+        super::ScreenTy::Welcome
+    }
 }

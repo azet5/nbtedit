@@ -13,4 +13,8 @@ impl Screen for HelpScreen {
             .align_items(Alignment::Center)
             .into()
     }
+
+    fn get_type<'a>(&'a self) -> super::ScreenTy {
+        super::ScreenTy::Help
+    }
 }

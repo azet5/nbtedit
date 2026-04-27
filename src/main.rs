@@ -36,10 +36,14 @@ impl NbtEdit {
 
         match screen {
             ScreenTy::Edit => btn_centered(text, Length::Fixed(70.0))
-                .on_press_maybe(if self.level_dat.is_some() {
+                .on_press_maybe(if self.level_dat.is_some() && self.screen.get_type() != screen {
                     Some(AppMessage::ChangeScreen(screen))
                 } else { None }),
-            _ => btn_centered(text, Length::Fixed(70.0)).on_press(AppMessage::ChangeScreen(screen))
+            _ => btn_centered(text, Length::Fixed(70.0)).on_press_maybe(
+                if self.screen.get_type() != screen {
+                    Some(AppMessage::ChangeScreen(screen))
+                } else { None }
+            )
         }
     }
 }

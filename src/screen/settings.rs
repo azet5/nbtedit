@@ -13,4 +13,8 @@ impl Screen for SettingsScreen {
             .align_items(Alignment::Center)
             .into()
     }
+
+    fn get_type<'a>(&'a self) -> super::ScreenTy {
+        super::ScreenTy::Settings
+    }
 }

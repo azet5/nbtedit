@@ -91,4 +91,7 @@ impl Screen for EditScreen {
             .push(screen)
             .into()
     }
+    fn get_type<'a>(&'a self) -> super::ScreenTy {
+        super::ScreenTy::Edit
+    }
 }

@@ -11,7 +11,7 @@ use iced::Theme;
 
 use crate::{AppMessage, NbtEdit};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ScreenTy {
     Welcome,
     Open,
@@ -36,6 +36,7 @@ impl ScreenTy {
 
 pub trait Screen {
     fn view<'a>(&'a self, app: &'a NbtEdit) -> iced::Element<'a, AppMessage, Theme>;
+    fn get_type<'a>(&'a self) -> ScreenTy;
     // fn update(&mut self, message: AppMessage);
 }
 

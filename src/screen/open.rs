@@ -34,4 +34,8 @@ impl Screen for OpenScreen {
             // .align_items(Alignment::Center)
             .into()
     }
+
+    fn get_type<'a>(&'a self) -> super::ScreenTy {
+        super::ScreenTy::Open
+    }
 }

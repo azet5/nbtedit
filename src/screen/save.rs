@@ -66,4 +66,8 @@ impl Screen for SaveScreen {
             .spacing(4)
             .into()
     }
+
+    fn get_type<'a>(&'a self) -> super::ScreenTy {
+        super::ScreenTy::Save
+    }
 }
