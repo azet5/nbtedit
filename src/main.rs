@@ -114,7 +114,6 @@ impl Sandbox for NbtEdit {
     fn update(&mut self, message: Self::Message) {
         match message {
             AppMessage::ChangeScreen(s) => {
-                // self.screen = s
                 self.screen = s.get_screen();
             },
             AppMessage::ChangeDir(path) => {
@@ -128,15 +127,6 @@ impl Sandbox for NbtEdit {
 
                 self.path = CurrentPath::new(path).unwrap();
             },
-            // AppMessage::CheckPath(path) => {
-            //     if is_mc_save(&path) {
-            //         self.screen = ScreenTy::Edit.get_screen();
-            //         self.level_dat = Some(NbtFile::open(format!("{}/level.dat", path)).unwrap());
-            //         self.path = format!("{}/level.dat", path);
-            //     } else {
-            //         self.path = path;
-            //     }
-            // },
             AppMessage::TagEvent(_, TagMessage::SelectTag(_, t)) => {
                 self.temp_name = t.name().unwrap_or(&String::new()).to_string();
                 self.temp_value = t.get().to_string();
