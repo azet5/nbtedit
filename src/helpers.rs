@@ -224,8 +224,8 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> C
                 ).on_press(AppMessage::TryOpenFile(entry.1)));
             }
         },
-        Err(_) => {
-            list = list.push("Cannot open");
+        Err(e) => {
+            list = list.push(Text::new(format!("Cannot open directory:\n{}", e)));
         }
     }
 
