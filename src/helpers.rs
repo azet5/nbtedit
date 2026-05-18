@@ -209,7 +209,6 @@ fn list_dir(path: impl AsRef<Path>, show_hidden: bool) -> Result<Vec<(String, St
 
 pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> Column<'a, AppMessage> {
     let mut list = Column::new().padding(4).spacing(4);
-    list = list.push(Text::new(path.clone()));
     if path.as_ref() != Path::new("/") {
         list = list.push(btn_centered("..", Length::Fill).on_press(AppMessage::TryOpenFile(path.as_ref().parent().unwrap().to_str().unwrap().to_string())));
     }
