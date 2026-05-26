@@ -35,4 +35,8 @@ impl ActionQueue {
     pub fn iter(&self) -> Iter<'_, ActionType> {
         self.0.iter()
     }
+
+    pub fn clear(&mut self) {
+        self.0.clear();
+    }
 }

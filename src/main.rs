@@ -161,6 +161,7 @@ impl Sandbox for NbtEdit {
             AppMessage::InputAction(action) => self.selected_action = Some(action),
             AppMessage::Write => {
                 self.level_dat.as_mut().unwrap().write(self.path.get()).unwrap();
+                self.queue.clear();
             },
             AppMessage::Pass => {},
         }
