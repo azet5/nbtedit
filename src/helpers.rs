@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path, vec::IntoIter};
 
 use flate2::read::GzDecoder;
-use iced::{Element, Font, Length, alignment::Horizontal, widget::{Button, Column, Row, Text}};
+use iced::{Element, Length, alignment::Horizontal, widget::{Button, Column, Row, Text}};
 
 use crate::{AppMessage, nbt::{ParseError, ParserData}};
 

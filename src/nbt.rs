@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::{ErrorKind, Read, Write}, path::Path, slice::Iter};
+use std::{fmt::{Display, Formatter}, fs::File, io::{ErrorKind, Read, Write}, path::Path, slice::Iter};
 
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
 use iced::{alignment::Horizontal, widget::{Button, Column, Row, Text}, Length};
