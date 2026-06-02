@@ -13,6 +13,8 @@ pub enum ActionType {
         id: usize,
         old_name: String,
         old_value: TagType,
+        new_name: Option<String>,
+        new_value: Option<TagType>,
     },
     Delete(usize),
 }

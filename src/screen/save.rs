@@ -1,6 +1,6 @@
 use iced::{Alignment, Length, widget::{Button, Column, Row, Scrollable, Text}};
 
-use crate::{AppMessage, helpers::{btn_centered, labeled_element}, queue::ActionType, screen::Screen};
+use crate::{AppMessage, helpers::{btn_centered, label_cmp, labeled_element}, queue::ActionType, screen::Screen};
 
 pub struct SaveScreen;
 
@@ -36,10 +36,11 @@ impl Screen for SaveScreen {
                     let tag = app.level_dat.as_ref().unwrap().get_tag().find(*id).unwrap();
                     options = options.push(labeled_element("type", Text::new(format!("{}", tag.get())).into()));
                 },
-                ActionType::Edit { id, old_name, .. } => {
+                ActionType::Edit { id, old_name, old_value, new_name, new_value } => {
                     let tag = app.level_dat.as_ref().unwrap().get_tag().find(*id).unwrap();
-                    options = options.push(labeled_element("type", Text::new(format!("{}", tag.get())).into()));
-                    options = options.push(labeled_element("old key", Text::new(old_name).into()));
+                    options = options.push(labeled_element("Type:", Text::new(format!("{}", tag.get().type_name())).into()));
+                    options = options.push(labeled_element("Key:", label_cmp(old_name, new_name.as_ref()).into()));
+                    options = options.push(labeled_element("Value:", label_cmp(old_value.to_string(), new_value.as_ref().map(|x| x.to_string())).into()));
                 }
                 ActionType::Delete(id) => {
                     let tag = app.level_dat.as_ref().unwrap().get_tag().find(*id).unwrap();

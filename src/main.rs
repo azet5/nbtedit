@@ -140,11 +140,13 @@ impl Sandbox for NbtEdit {
             },
             AppMessage::InputName(name) => self.temp_name = name,
             AppMessage::InputValue(value) => self.temp_value = value,
-            AppMessage::TagEvent(id, ref e @ TagMessage::EditTag { .. }) => {
+            AppMessage::TagEvent(id, ref e @ TagMessage::EditTag { ref name, ref value }) => {
                 self.queue.add(ActionType::Edit {
                     id,
                     old_name: self.selected_tag.as_ref().unwrap().name().as_ref().unwrap().to_string(),
                     old_value: self.selected_tag.as_ref().unwrap().get().clone(),
+                    new_name: name.clone(),
+                    new_value: value.clone(),
                 });
                 self.level_dat.as_mut().unwrap().get_mut_tag().find_mut(id).unwrap().update(e.clone());
             },

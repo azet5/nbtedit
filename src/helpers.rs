@@ -1,7 +1,7 @@
 use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path, vec::IntoIter};
 
 use flate2::read::GzDecoder;
-use iced::{widget::{Button, Text, Column, Row}, alignment::Horizontal, Length, Element};
+use iced::{Element, Font, Length, alignment::Horizontal, widget::{Button, Column, Row, Text}};
 
 use crate::{AppMessage, nbt::{ParseError, ParserData}};
 
@@ -237,4 +237,16 @@ pub fn labeled_element<'a>(text: impl Into<Cow<'a, str>>, element: Element<'a, A
         .push(Text::new(text.into()).width(Length::Fixed(80.0)))
         .push(element)
         .align_items(iced::Alignment::Center)
+}
+
+pub fn label_cmp<'a>(text1: impl Into<Cow<'a, str>>, text2: Option<impl Into<Cow<'a, str>>>) -> Column<'a, AppMessage> {
+    let text1 = text1.into().to_string();
+    Column::new()
+        .push(Text::new(text1.clone()))
+        .push_maybe(if let Some(t) = text2 {
+            let text2 = t.into().to_string();
+            if text1 != text2.clone() {
+                Some(Text::new(format!(" -> {}", text2)))
+            } else { None }
+        } else { None })
 }
