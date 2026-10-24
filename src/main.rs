@@ -187,6 +187,7 @@ impl NbtEdit {
 fn main() -> iced::Result {
     iced::application(NbtEdit::new, NbtEdit::update, NbtEdit::view)
         .centered()
+        .title(NbtEdit::title)
         .window(window::Settings {
             size: Size::new(800.0, 600.0),
             min_size: Some(Size::new(800.0, 600.0)),
