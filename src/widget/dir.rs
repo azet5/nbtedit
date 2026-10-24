@@ -1,6 +1,6 @@
 use std::{fs::{self, DirEntry}, io, path::{Path, PathBuf}};
 
-use iced::{Element, widget::{Button, Column, Row, Scrollable, Text, button, rule}};
+use iced::{Element, Length, widget::{Button, Column, Row, Scrollable, Text, button, rule}};
 
 use crate::{AppMessage, helpers::is_mc_save};
 
@@ -37,6 +37,8 @@ impl DirViewer {
             .push(self.breadcrumb.view())
             .push(rule::horizontal(1))
             .push(self.listing.view())
+            .spacing(4)
+            .padding(4)
             .into()
     }
 }
@@ -46,6 +48,7 @@ pub struct PathComponent {
     pub(self) caption: String,
     pub(self) path: PathBuf,
     pub(self) is_nbt: bool,
+    pub(self) breadcrumb: bool,
 }
 
 impl PathComponent {
@@ -56,6 +59,7 @@ impl PathComponent {
             } else {
                 AppMessage::PassToBreadcrumb(DirMessage::ChangePath(self.path.clone()))
             })
+            .width(if self.breadcrumb { Length::Shrink } else { 250.into() })
             .style(if self.is_nbt { button::success } else { button::subtle })
             .into()
     }
@@ -75,6 +79,7 @@ impl DirBreadcrumb {
                 caption: part.to_str().unwrap().to_string(),
                 path: absolute.clone(),
                 is_nbt: false,
+                breadcrumb: true,
             }
         }).collect()
     }
@@ -88,7 +93,7 @@ impl DirBreadcrumb {
     pub fn view(&self) -> Element<'_, AppMessage> {
         Scrollable::new(
             Row::from_vec(self.parts.iter().map(|p| p.view()).collect())
-        ).horizontal().spacing(4).into()
+        ).horizontal().spacing(1).into()
     }
 }
 
@@ -107,6 +112,7 @@ impl DirListing {
                         caption: item.file_name().into_string().unwrap(),
                         path: item.path(),
                         is_nbt,
+                        breadcrumb: false,
                     })
                 } else { None }
             })
@@ -139,6 +145,6 @@ impl DirListing {
                 }).collect()).into(),
                 Err(e) => Into::<Element<'_, AppMessage>>::into(Text::new(e.to_string())),
             }
-        ).spacing(4).into()
+        ).spacing(1).into()
     }
 }

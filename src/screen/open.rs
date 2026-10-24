@@ -11,7 +11,6 @@ impl Screen for OpenScreen {
             .height(Length::Fill)
             .spacing(4)
             .padding(4)
-            // .align_items(Alignment::Center)
             .into()
     }
 

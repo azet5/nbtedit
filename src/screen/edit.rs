@@ -1,4 +1,4 @@
-use iced::{Length, widget::{Column, PickList, Row, Scrollable, Space, Text, TextInput}};
+use iced::{Length, widget::{Column, PickList, Row, Scrollable, Space, Text, TextInput, button}};
 
 use crate::{AppMessage, ToggleCreateMode, helpers::{TagChoice, btn_centered, labeled_element}, nbt::{TagMessage, TagType}, screen::Screen};
 
@@ -52,7 +52,9 @@ impl Screen for EditScreen {
                     AppMessage::ToggleCreate(ToggleCreateMode::Tag)
                 }));
             }
-            row = row.push(btn_centered("Delete", 100).on_press(AppMessage::TagEvent(t.id(), TagMessage::RemoveTag)));
+            row = row.push(btn_centered("Delete", 100)
+                .on_press(AppMessage::TagEvent(t.id(), TagMessage::RemoveTag))
+                .style(button::danger));
             screen = screen.push(row);
         }
 
@@ -87,7 +89,11 @@ impl Screen for EditScreen {
         }
 
         Row::new()
-            .push(Scrollable::new(app.level_dat.as_ref().unwrap().get_tag().view()).width(Length::FillPortion(2)))
+            .push(if let Some(tree) = app.level_dat.as_ref() {
+                Scrollable::new(tree.get_tag().view()).width(Length::FillPortion(2))
+            } else {
+                Scrollable::new(Text::new("No file opened."))
+            })
             .push(screen)
             .into()
     }

@@ -1,7 +1,7 @@
 use std::{fmt::{Display, Formatter}, fs::File, io::{ErrorKind, Read, Write}, path::Path, slice::Iter};
 
 use flate2::{read::GzDecoder, write::GzEncoder, Compression};
-use iced::{alignment::Horizontal, widget::{Button, Column, Row, Text}, Length};
+use iced::{Alignment, Length, alignment::Horizontal, widget::{Button, Column, Row, Text, button}};
 
 use crate::AppMessage;
 
@@ -225,13 +225,14 @@ impl Tag {
     }
 
     pub fn view(&self) -> Column<'_, AppMessage> {
-        let mut column = Column::new().padding([0, 12]);
+        let mut column = Column::new().padding([2, 16]);
         if !self.hidden {
             column = column.push(Row::new()
                 .push(Button::new(
-                        Text::new(if self.expanded { "-" } else { "+" })
-                        .align_x(Horizontal::Center))
-                    .width(Length::Fixed(25.0))
+                        Text::new(if self.expanded { "-" } else { "+" }).center()
+                    .align_x(Horizontal::Center))
+                    .width(25)
+                    .height(25)
                     .on_press_maybe(match self.tag {
                         TagType::Compound(_) |
                         TagType::List(_) |
@@ -240,10 +241,14 @@ impl Tag {
                         TagType::LongArray(_) => Some(AppMessage::TagEvent(self.id, TagMessage::ExpandTag(!self.expanded))),
                         _ => None,
                     })
+                    .style(button::subtle)
                 )
-                .push(Button::new(if let Some(s) = self.name.as_ref() { s.as_str() } else { "(empty)" } )
+                .push(Button::new(Text::new(if let Some(s) = self.name.as_ref() { s.as_str() } else { "(empty)" } ).center())
                     .on_press(AppMessage::TagEvent(self.id, TagMessage::SelectTag(self.name.clone(), self.clone())))
+                    .height(25)
+                    .style(button::subtle)
                 )
+                .align_y(Alignment::Center)
             );
     
             if let TagType::Compound(tags) = &self.tag {

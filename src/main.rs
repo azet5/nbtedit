@@ -5,7 +5,7 @@ pub mod screen;
 mod widget;
 
 use helpers::{btn_centered, TagChoice};
-use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, rule}, window::{self, settings::PlatformSpecific}};
+use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, button, rule}, window::{self, settings::PlatformSpecific}};
 use nbt::{NbtFile, Tag, TagMessage, TagType};
 use queue::{ActionQueue, ActionType};
 
@@ -35,17 +35,14 @@ impl NbtEdit {
             ScreenTy::Help => "Help",
         };
 
-        match screen {
-            ScreenTy::Edit => btn_centered(text, Length::Fixed(70.0))
-                .on_press_maybe(if self.level_dat.is_some() && self.screen.get_type() != screen {
-                    Some(AppMessage::ChangeScreen(screen))
-                } else { None }),
-            _ => btn_centered(text, Length::Fixed(70.0)).on_press_maybe(
+        btn_centered(text, Length::Fixed(70.0))
+            .on_press_maybe(
                 if self.screen.get_type() != screen {
-                    Some(AppMessage::ChangeScreen(screen))
+                    Some(AppMessage::ChangeScreen(screen.clone()))
                 } else { None }
-            )
-        }
+            ).style(if self.screen.get_type() == screen {
+                button::primary
+            } else { button::subtle })
     }
 }
 
