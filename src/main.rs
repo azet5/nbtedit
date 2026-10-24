@@ -2,13 +2,14 @@ mod helpers;
 mod nbt;
 mod queue;
 pub mod screen;
+mod widget;
 
-use helpers::{btn_centered, is_mc_save, TagChoice};
+use helpers::{btn_centered, TagChoice};
 use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, rule}, window::{self, settings::PlatformSpecific}};
 use nbt::{NbtFile, Tag, TagMessage, TagType};
 use queue::{ActionQueue, ActionType};
 
-use crate::{helpers::CurrentPath, screen::ScreenTy};
+use crate::screen::ScreenTy;
 
 pub struct NbtEdit {
     screen: Box<dyn screen::Screen>,
@@ -17,7 +18,7 @@ pub struct NbtEdit {
     selected_tag: Option<Tag>,
     temp_name: String,
     temp_value: String,
-    path: CurrentPath,
+    dir_viewer: widget::DirViewer,
     level_dat: Option<NbtFile>,
     queue: ActionQueue,
     selected_action: Option<ActionType>,
@@ -51,7 +52,7 @@ impl NbtEdit {
 #[derive(Debug, Clone)]
 pub enum AppMessage {
     ChangeScreen(ScreenTy),
-    ChangeDir(String),
+    // ChangeDir(String),
     TryOpenFile(String),
     TagEvent(usize, TagMessage),
     InputName(String),
@@ -60,6 +61,7 @@ pub enum AppMessage {
     InputTagName(String),
     InputTagValue(TagChoice),
     InputAction(ActionType),
+    PassToBreadcrumb(widget::DirMessage),
     Write,
     Pass,
 }
@@ -96,9 +98,9 @@ impl NbtEdit {
             temp_name: String::new(),
             temp_value: String::new(),
             #[cfg(target_family = "unix")]
-            path: CurrentPath::new("/home").unwrap(),
+            dir_viewer: widget::DirViewer::new("/home"),
             #[cfg(target_os = "windows")]
-            path: CurrentPath::new("C:/Users").unwrap(),
+            dir_viewer: widget::DirViewer::new("C:/Users"),
             level_dat: None,
             queue: ActionQueue::new(),
             selected_action: None,
@@ -114,16 +116,9 @@ impl NbtEdit {
             AppMessage::ChangeScreen(s) => {
                 self.screen = s.get_screen();
             },
-            AppMessage::ChangeDir(path) => {
-                self.path = CurrentPath::new(path).unwrap();
-            },
             AppMessage::TryOpenFile(path) => {
-                if is_mc_save(&path) {
-                    self.screen = ScreenTy::Edit.get_screen();
-                    self.level_dat = Some(NbtFile::open(&path).unwrap());
-                }
-
-                self.path = CurrentPath::new(path).unwrap();
+                self.screen = ScreenTy::Edit.get_screen();
+                self.level_dat = Some(NbtFile::open(&path).unwrap());
             },
             AppMessage::TagEvent(_, TagMessage::SelectTag(_, t)) => {
                 self.temp_name = t.name().unwrap_or(&String::new()).to_string();
@@ -159,8 +154,9 @@ impl NbtEdit {
                 self.create_screen = tag;
             },
             AppMessage::InputAction(action) => self.selected_action = Some(action),
+            AppMessage::PassToBreadcrumb(msg) => self.dir_viewer.update(msg),
             AppMessage::Write => {
-                self.level_dat.as_mut().unwrap().write(self.path.get()).unwrap();
+                // self.level_dat.as_mut().unwrap().write(self.path.get()).unwrap();
                 self.queue.clear();
             },
             AppMessage::Pass => {},

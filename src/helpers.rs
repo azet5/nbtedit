@@ -1,9 +1,9 @@
 #[cfg(target_os = "windows")]
 use std::os::windows::fs::MetadataExt;
-use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path, vec::IntoIter};
+use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path};
 
 use flate2::read::GzDecoder;
-use iced::{Element, Length, alignment::Horizontal, widget::{Button, Column, Row, Text, button}};
+use iced::{Element, Length, alignment::Horizontal, widget::{Button, Column, Row, Text}};
 
 use crate::{AppMessage, nbt::{ParseError, ParserData}};
 
@@ -62,71 +62,6 @@ impl Display for TagChoice {
     }
 }
 
-pub struct CurrentPath {
-    parts: Vec<(String, String)>,
-    path: String,
-}
-
-impl CurrentPath {
-    pub fn new(path: impl AsRef<Path>) -> Result<Self, ()> {
-        let path = path.as_ref();
-        #[cfg(not(target_os = "windows"))]
-        if !path.is_absolute() {
-            return Err(());
-        }
-
-        let mut parts = Vec::new();
-        let mut path_partial = String::new();
-        for el in path.components() {
-            path_partial.push_str(&el.as_os_str().to_string_lossy());
-            match el {
-                std::path::Component::Prefix(p) => {
-                    // TODO this isn't ideal plus can't be root if one would open file from another drive
-                    // let mut root = p.as_os_str().to_str().unwrap().to_string();
-                    // root.push_str("/");
-                    // parts.push((root.clone(), root.clone()))
-                },
-                std::path::Component::RootDir => parts.push(("/".to_string(), "/".to_string())),
-                std::path::Component::CurDir => todo!(),
-                std::path::Component::ParentDir => todo!(),
-                std::path::Component::Normal(os_str) => {
-                    parts.push((os_str.to_string_lossy().to_string(), path_partial.clone()));
-                    path_partial.push('/');
-                },
-            }
-        }
-
-        Ok(Self {
-            parts,
-            path: path.to_string_lossy().to_string(),
-        })
-    }
-
-    pub fn get(&self) -> String {
-        self.path.clone()
-    }
-}
-
-impl IntoIterator for CurrentPath {
-    type Item = (String, String);
-
-    type IntoIter = IntoIter<(String, String)>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.parts.into_iter()
-    }
-}
-
-impl IntoIterator for &CurrentPath {
-    type Item = (String, String);
-
-    type IntoIter = IntoIter<(String, String)>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        self.parts.clone().into_iter()
-    }
-}
-
 pub fn btn_centered<'a>(text: impl Into<Cow<'a, str>> + iced::widget::text::IntoFragment<'a>, width: impl Into<Length>) -> Button<'a, AppMessage> {
     Button::new(Text::new(text).align_x(Horizontal::Center)).padding(4).width(width)
 }
@@ -182,63 +117,6 @@ pub fn is_mc_save(path: impl AsRef<Path>) -> bool {
     }
 
     false
-}
-
-fn list_dir(path: impl AsRef<Path>, show_hidden: bool) -> Result<Vec<(String, String)>, String> {
-    match std::fs::read_dir(path) {
-        Ok(dir) => {
-            let mut data = Vec::new();
-            for i in dir {
-                match i {
-                    Ok(dir) => {
-                        #[cfg(target_os = "windows")]
-                        if !show_hidden && dir.metadata().unwrap().file_attributes() & 2 != 0 { continue; }
-                        #[cfg(target_family = "unix")]
-                        if !show_hidden && dir.file_name().to_string_lossy().starts_with(".") { continue; }
-                        let name = dir.file_name();
-                        let name = name.to_string_lossy();
-                        if dir.file_type().unwrap().is_dir() ||
-                            name.to_lowercase().ends_with(".dat") ||
-                            name.to_lowercase().ends_with(".nbt") {
-                            data.push((dir.file_name().to_str().unwrap().to_string(), dir.path().to_str().unwrap().to_string()));
-                        }
-                    },
-                    Err(e) => return Err(e.to_string()),
-                }
-            }
-
-            data.sort_by(|a, b| a.0.to_lowercase().cmp(&b.0.to_lowercase()));
-
-            Ok(data)
-        },
-        Err(e) => Err(e.to_string()),
-    }
-}
-
-pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> Column<'a, AppMessage> {
-    let mut list = Column::new().padding(4).spacing(4);
-    #[cfg(not(target_os = "windows"))]
-    if path.as_ref() != Path::new("/") {
-        list = list.push(btn_centered("..", Length::Fill).on_press(AppMessage::TryOpenFile(path.as_ref().parent().unwrap().to_str().unwrap().to_string())));
-    }
-    match list_dir(path.as_ref(), true) {
-        Ok(data) => {
-            for entry in data {
-                list = list.push(btn_centered(entry.0.clone(), Length::Fill).style(
-                    if is_mc_save(&Path::new(&entry.1)) {
-                        button::success
-                    } else {
-                        button::primary
-                    }
-                ).on_press(AppMessage::TryOpenFile(entry.1)));
-            }
-        },
-        Err(e) => {
-            list = list.push(Text::new(format!("Cannot open directory:\n{}", e)));
-        }
-    }
-
-    return list;
 }
 
 pub fn labeled_element<'a>(text: impl Into<Cow<'a, str>>, element: Element<'a, AppMessage>) -> Row<'a, AppMessage> {
