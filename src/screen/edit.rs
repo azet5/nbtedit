@@ -30,7 +30,7 @@ impl Screen for EditScreen {
                 ));
             }
     
-            screen = screen.push(Space::with_height(20));
+            screen = screen.push(Space::new().height(20));
             let mut row = Row::new().spacing(4)
                 .push(btn_centered("Apply", 100)
                     .on_press_maybe(if t.get().is_compound() {

@@ -3,7 +3,7 @@ use std::os::windows::fs::MetadataExt;
 use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path, vec::IntoIter};
 
 use flate2::read::GzDecoder;
-use iced::{Element, Length, alignment::Horizontal, widget::{Button, Column, Row, Text}};
+use iced::{Element, Length, alignment::Horizontal, widget::{Button, Column, Row, Text, button}};
 
 use crate::{AppMessage, nbt::{ParseError, ParserData}};
 
@@ -127,8 +127,8 @@ impl IntoIterator for &CurrentPath {
     }
 }
 
-pub fn btn_centered<'a>(text: impl Into<Cow<'a, str>>, width: impl Into<Length>) -> Button<'a, AppMessage> {
-    Button::new(Text::new(text).horizontal_alignment(Horizontal::Center)).padding(4).width(width)
+pub fn btn_centered<'a>(text: impl Into<Cow<'a, str>> + iced::widget::text::IntoFragment<'a>, width: impl Into<Length>) -> Button<'a, AppMessage> {
+    Button::new(Text::new(text).align_x(Horizontal::Center)).padding(4).width(width)
 }
 
 // pub fn default_paths<'a>() -> Column<'a, AppMessage> {
@@ -226,9 +226,9 @@ pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> C
             for entry in data {
                 list = list.push(btn_centered(entry.0.clone(), Length::Fill).style(
                     if is_mc_save(&Path::new(&entry.1)) {
-                        iced::theme::Button::Positive
+                        button::success
                     } else {
-                        iced::theme::Button::Primary
+                        button::primary
                     }
                 ).on_press(AppMessage::TryOpenFile(entry.1)));
             }
@@ -245,14 +245,14 @@ pub fn labeled_element<'a>(text: impl Into<Cow<'a, str>>, element: Element<'a, A
     Row::new()
         .push(Text::new(text.into()).width(Length::Fixed(80.0)))
         .push(element)
-        .align_items(iced::Alignment::Center)
+        .align_y(iced::Alignment::Center)
 }
 
 pub fn label_cmp<'a>(text1: impl Into<Cow<'a, str>>, text2: Option<impl Into<Cow<'a, str>>>) -> Column<'a, AppMessage> {
     let text1 = text1.into().to_string();
     Column::new()
         .push(Text::new(text1.clone()))
-        .push_maybe(if let Some(t) = text2 {
+        .push(if let Some(t) = text2 {
             let text2 = t.into().to_string();
             if text1 != text2.clone() {
                 Some(Text::new(format!(" -> {}", text2)))

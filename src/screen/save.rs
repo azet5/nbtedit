@@ -58,7 +58,7 @@ impl Screen for SaveScreen {
                 .push(Text::new(format!("{} action(s)", app.queue.length())))
                 .padding(4)
                 .spacing(4)
-                .align_items(Alignment::Center)
+                .align_y(Alignment::Center)
             ).push(Row::new()
                 .push(Scrollable::new(buttons).width(Length::FillPortion(2)))
                 .push(options)

@@ -1,4 +1,4 @@
-use iced::{Length, widget::{Button, Column, Row, Rule, Scrollable, Text}};
+use iced::{Length, widget::{Button, Column, Row, Scrollable, Text, rule}};
 
 use crate::{NbtEdit, helpers::{CurrentPath, dir_buttons}, screen::Screen};
 
@@ -23,7 +23,7 @@ impl Screen for OpenScreen {
             .push(Row::new()
                 .push(btn_breadcrumb(&app.path))
             )
-            .push(Rule::horizontal(1))
+            .push(rule::horizontal(1))
             .push(Row::new()
                 // .push(Scrollable::new(default_paths()))
                 .push(Scrollable::new(dir_buttons(path)).width(Length::Fill))

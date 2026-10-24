@@ -4,7 +4,7 @@ mod queue;
 pub mod screen;
 
 use helpers::{btn_centered, is_mc_save, TagChoice};
-use iced::{widget::{Button, Column, Container, Row, Rule, Space}, window::{self, settings::PlatformSpecific}, Alignment, Length, Sandbox, Settings, Size};
+use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, rule}, window::{self, settings::PlatformSpecific}};
 use nbt::{NbtFile, Tag, TagMessage, TagType};
 use queue::{ActionQueue, ActionType};
 
@@ -86,9 +86,7 @@ impl Default for CreateData {
     }
 }
 
-impl Sandbox for NbtEdit {
-    type Message = AppMessage;
-
+impl NbtEdit {
     fn new() -> Self {
         NbtEdit {
             screen: Box::new(screen::welcome::WelcomeScreen),
@@ -111,7 +109,7 @@ impl Sandbox for NbtEdit {
         format!("nbtedit {}", env!("CARGO_PKG_VERSION"))
     }
 
-    fn update(&mut self, message: Self::Message) {
+    fn update(&mut self, message: AppMessage) {
         match message {
             AppMessage::ChangeScreen(s) => {
                 self.screen = s.get_screen();
@@ -169,7 +167,7 @@ impl Sandbox for NbtEdit {
         }
     }
 
-    fn view(&self) -> iced::Element<'_, Self::Message> {
+    fn view(&self) -> iced::Element<'_, AppMessage> {
         Column::new()
         .push(Row::new()
             .push(Row::new()
@@ -177,30 +175,31 @@ impl Sandbox for NbtEdit {
                 .push(self.create_btn(ScreenTy::Save))
                 .push(self.create_btn(ScreenTy::Edit))
                 .spacing(2)
-            ).push(Space::new(Length::Fill, Length::Shrink))
+            ).push(Space::new().width(Length::Fill).height(Length::Shrink))
             .push(Row::new()
                 .push(self.create_btn(ScreenTy::Settings))
                 .push(self.create_btn(ScreenTy::Help))
                 .spacing(2)
             ).padding(4)
-        ).push(Rule::horizontal(1))
+        ).push(rule::horizontal(1))
         .push(Container::new(self.screen.view(&self)).height(Length::Fill))
-        .align_items(Alignment::Center)
+        .align_x(Alignment::Center)
         .into()
     }
 }
 
 fn main() -> iced::Result {
-    NbtEdit::run(Settings {
-        window: window::Settings {
+    iced::application(NbtEdit::new, NbtEdit::update, NbtEdit::view)
+        .centered()
+        .window(window::Settings {
             size: Size::new(800.0, 600.0),
             min_size: Some(Size::new(800.0, 600.0)),
             #[cfg(target_os = "linux")]
             platform_specific: PlatformSpecific {
-                application_id: format!("{}", "CARGO_PKG_NAME")
+                application_id: format!("{}", "CARGO_PKG_NAME"),
+                ..Default::default()
             },
             ..Default::default()
-        },
-        ..Default::default()
-    })
+        })
+        .run()
 }

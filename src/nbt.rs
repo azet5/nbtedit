@@ -230,7 +230,7 @@ impl Tag {
             column = column.push(Row::new()
                 .push(Button::new(
                         Text::new(if self.expanded { "-" } else { "+" })
-                        .horizontal_alignment(Horizontal::Center))
+                        .align_x(Horizontal::Center))
                     .width(Length::Fixed(25.0))
                     .on_press_maybe(match self.tag {
                         TagType::Compound(_) |
