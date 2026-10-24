@@ -100,7 +100,7 @@ impl Sandbox for NbtEdit {
             #[cfg(target_family = "unix")]
             path: CurrentPath::new("/home").unwrap(),
             #[cfg(target_os = "windows")]
-            path: "C:/Users".to_string(),
+            path: CurrentPath::new("C:/Users").unwrap(),
             level_dat: None,
             queue: ActionQueue::new(),
             selected_action: None,

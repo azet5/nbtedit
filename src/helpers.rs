@@ -1,3 +1,5 @@
+#[cfg(target_os = "windows")]
+use std::os::windows::fs::MetadataExt;
 use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path, vec::IntoIter};
 
 use flate2::read::GzDecoder;
@@ -68,6 +70,7 @@ pub struct CurrentPath {
 impl CurrentPath {
     pub fn new(path: impl AsRef<Path>) -> Result<Self, ()> {
         let path = path.as_ref();
+        #[cfg(not(target_os = "windows"))]
         if !path.is_absolute() {
             return Err(());
         }
@@ -77,7 +80,12 @@ impl CurrentPath {
         for el in path.components() {
             path_partial.push_str(&el.as_os_str().to_string_lossy());
             match el {
-                std::path::Component::Prefix(_) => todo!(),
+                std::path::Component::Prefix(p) => {
+                    // TODO this isn't ideal plus can't be root if one would open file from another drive
+                    // let mut root = p.as_os_str().to_str().unwrap().to_string();
+                    // root.push_str("/");
+                    // parts.push((root.clone(), root.clone()))
+                },
                 std::path::Component::RootDir => parts.push(("/".to_string(), "/".to_string())),
                 std::path::Component::CurDir => todo!(),
                 std::path::Component::ParentDir => todo!(),
@@ -209,10 +217,11 @@ fn list_dir(path: impl AsRef<Path>, show_hidden: bool) -> Result<Vec<(String, St
 
 pub fn dir_buttons<'a>(path: impl Into<Cow<'a, str>> + AsRef<Path> + Clone) -> Column<'a, AppMessage> {
     let mut list = Column::new().padding(4).spacing(4);
+    #[cfg(not(target_os = "windows"))]
     if path.as_ref() != Path::new("/") {
         list = list.push(btn_centered("..", Length::Fill).on_press(AppMessage::TryOpenFile(path.as_ref().parent().unwrap().to_str().unwrap().to_string())));
     }
-    match list_dir(path.as_ref(), false) {
+    match list_dir(path.as_ref(), true) {
         Ok(data) => {
             for entry in data {
                 list = list.push(btn_centered(entry.0.clone(), Length::Fill).style(
