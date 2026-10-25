@@ -3,7 +3,7 @@ use std::os::windows::fs::MetadataExt;
 use std::{borrow::Cow, fmt::{Display, Formatter}, fs::File, io::Read, path::Path};
 
 use flate2::read::GzDecoder;
-use iced::{Element, Length, alignment::Horizontal, widget::{Button, Column, Row, Text}};
+use iced::{Element, Length, Theme, alignment::Horizontal, widget::{Button, Column, Row, Text, button}};
 
 use crate::{AppMessage, nbt::{ParseError, ParserData}};
 
@@ -136,4 +136,13 @@ pub fn label_cmp<'a>(text1: impl Into<Cow<'a, str>>, text2: Option<impl Into<Cow
                 Some(Text::new(format!(" -> {}", text2)))
             } else { None }
         } else { None })
+}
+
+pub fn btn_active(theme: &Theme, _status: button::Status) -> button::Style {
+    let palette = theme.extended_palette();
+    button::Style {
+        background: Some(iced::Background::Color(palette.background.weak.color)),
+        text_color: palette.background.weakest.text,
+        ..Default::default()
+    }
 }

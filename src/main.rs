@@ -5,7 +5,7 @@ pub mod screen;
 mod widget;
 
 use helpers::{btn_centered, TagChoice};
-use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, button, rule}, window::{self, settings::PlatformSpecific}};
+use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, button, container, rule}, window::{self, settings::PlatformSpecific}};
 use nbt::{NbtFile, Tag, TagMessage, TagType};
 use queue::{ActionQueue, ActionType};
 
@@ -36,12 +36,9 @@ impl NbtEdit {
         };
 
         btn_centered(text, Length::Fixed(70.0))
-            .on_press_maybe(
-                if self.screen.get_type() != screen {
-                    Some(AppMessage::ChangeScreen(screen.clone()))
-                } else { None }
+            .on_press(AppMessage::ChangeScreen(screen.clone())
             ).style(if self.screen.get_type() == screen {
-                button::primary
+                helpers::btn_active
             } else { button::subtle })
     }
 }
@@ -163,16 +160,22 @@ impl NbtEdit {
     fn view(&self) -> iced::Element<'_, AppMessage> {
         Column::new()
         .push(Row::new()
-            .push(Row::new()
-                .push(self.create_btn(ScreenTy::Open))
-                .push(self.create_btn(ScreenTy::Save))
-                .push(self.create_btn(ScreenTy::Edit))
-                .spacing(2)
+            .push(Container::new(
+                Row::new()
+                    .push(self.create_btn(ScreenTy::Open))
+                    .push(self.create_btn(ScreenTy::Save))
+                    .push(self.create_btn(ScreenTy::Edit))
+                    .spacing(2)
+                    .padding(2)
+                ).style(container::rounded_box)
             ).push(Space::new().width(Length::Fill).height(Length::Shrink))
-            .push(Row::new()
-                .push(self.create_btn(ScreenTy::Settings))
-                .push(self.create_btn(ScreenTy::Help))
-                .spacing(2)
+            .push(Container::new(
+                Row::new()
+                    .push(self.create_btn(ScreenTy::Settings))
+                    .push(self.create_btn(ScreenTy::Help))
+                    .spacing(2)
+                    .padding(2)
+                ).style(container::rounded_box)
             ).padding(4)
         ).push(rule::horizontal(1))
         .push(Container::new(self.screen.view(&self)).height(Length::Fill))

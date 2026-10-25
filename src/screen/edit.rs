@@ -1,4 +1,4 @@
-use iced::{Length, widget::{Column, PickList, Row, Scrollable, Space, Text, TextInput, button}};
+use iced::{Alignment, Element, Length, widget::{Column, PickList, Row, Scrollable, Space, Text, TextInput, button}};
 
 use crate::{AppMessage, ToggleCreateMode, helpers::{TagChoice, btn_centered, labeled_element}, nbt::{TagMessage, TagType}, screen::Screen};
 
@@ -88,14 +88,18 @@ impl Screen for EditScreen {
             },
         }
 
-        Row::new()
-            .push(if let Some(tree) = app.level_dat.as_ref() {
-                Scrollable::new(tree.get_tag().view()).width(Length::FillPortion(2))
-            } else {
-                Scrollable::new(Text::new("No file opened."))
-            })
-            .push(screen)
-            .into()
+        if let Some(tree) = app.level_dat.as_ref() {
+            Row::new()
+                .push(Scrollable::new(tree.get_tag().view()).width(Length::FillPortion(2)))
+                .push(screen)
+                .into()
+        } else {
+            Row::new()
+                .push(Text::new("Please open file before editing."))
+                .align_y(Alignment::Center)
+                .height(Length::Fill)
+                .into()
+        }
     }
     fn get_type<'a>(&'a self) -> super::ScreenTy {
         super::ScreenTy::Edit

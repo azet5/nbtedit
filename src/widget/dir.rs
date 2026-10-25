@@ -142,7 +142,7 @@ impl DirListing {
             match &self.listing {
                 Ok(listing) => Column::from_vec(listing.iter().map(|el| {
                     el.view()
-                }).collect()).into(),
+                }).collect()).spacing(1).into(),
                 Err(e) => Into::<Element<'_, AppMessage>>::into(Text::new(e.to_string())),
             }
         ).spacing(1).into()
