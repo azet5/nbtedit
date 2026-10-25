@@ -3,6 +3,7 @@ mod nbt;
 mod queue;
 pub mod screen;
 mod widget;
+mod settings;
 
 use helpers::{btn_centered, TagChoice};
 use iced::{Alignment, Length, Size, widget::{Button, Column, Container, Row, Space, button, container, rule}, window::{self, settings::PlatformSpecific}};
@@ -19,6 +20,7 @@ pub struct NbtEdit {
     temp_name: String,
     temp_value: String,
     dir_viewer: widget::DirViewer,
+    settings: settings::AppSettings,
     level_dat: Option<NbtFile>,
     queue: ActionQueue,
     selected_action: Option<ActionType>,
@@ -56,6 +58,7 @@ pub enum AppMessage {
     InputTagValue(TagChoice),
     InputAction(ActionType),
     PassToBreadcrumb(widget::DirMessage),
+    PassToSettings(settings::SettingsMessage),
     Write,
     Pass,
 }
@@ -95,6 +98,7 @@ impl NbtEdit {
             dir_viewer: widget::DirViewer::new("/home"),
             #[cfg(target_os = "windows")]
             dir_viewer: widget::DirViewer::new("C:/Users"),
+            settings: settings::AppSettings::load(),
             level_dat: None,
             queue: ActionQueue::new(),
             selected_action: None,
@@ -108,6 +112,9 @@ impl NbtEdit {
     fn update(&mut self, message: AppMessage) {
         match message {
             AppMessage::ChangeScreen(s) => {
+                if self.screen.get_type() == ScreenTy::Settings && self.settings.is_dirty() {
+                    self.settings.flush();
+                }
                 self.screen = s.get_screen();
             },
             AppMessage::TryOpenFile(path) => {
@@ -149,6 +156,7 @@ impl NbtEdit {
             },
             AppMessage::InputAction(action) => self.selected_action = Some(action),
             AppMessage::PassToBreadcrumb(msg) => self.dir_viewer.update(msg),
+            AppMessage::PassToSettings(msg) => self.settings.update(msg),
             AppMessage::Write => {
                 // self.level_dat.as_mut().unwrap().write(self.path.get()).unwrap();
                 self.queue.clear();
